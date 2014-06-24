@@ -11,6 +11,8 @@ class config():
 	Each parameter has its own attribute, with the value of the attribute being the parameter.
 	"""
 	# initialize empty parameters
+	def __init__(self):
+		
 	self.baseDir = None
 	self.scriptsDir = None
 	self.atlasDir = None
