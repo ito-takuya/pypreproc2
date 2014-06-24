@@ -12,24 +12,23 @@ class config():
 	"""
 	# initialize empty parameters
 	def __init__(self):
-		
-	self.baseDir = None
-	self.scriptsDir = None
-	self.atlasDir = None
-	self.AFNIDir = None
-	self.FSDir = None
-	self.numRuns = None
-	self.numTRs = None
-	self.TR_length = None
-	self.smoothingParam = None
-	self.tpattern = None
-	self.listOfSubjs = None
-	self.analysisName = None
-	self.rawDataDir = None
-	self.timingFiles = None
-	self.t1_image = None
-	self.epi_series = None
-	self.name = None
+		self.baseDir = None
+		self.scriptsDir = None
+		self.atlasDir = None
+		self.AFNIDir = None
+		self.FSDir = None
+		self.numRuns = None
+		self.numTRs = None
+		self.TR_length = None
+		self.smoothingParam = None
+		self.tpattern = None
+		self.listOfSubjs = None
+		self.analysisName = None
+		self.rawDataDir = None
+		self.timingFiles = None
+		self.t1_image = None
+		self.epi_series = None
+		self.name = None
 
 	def getBaseDir(self):
 		string = raw_input('Give your base output directory: ')
