@@ -14,7 +14,7 @@ class config():
 	def __init__(self, config=None):
 		# Either initialize the config object's attributes to None, or input a config file and update/re-update this config object's attributes.
 		if config==None:
-			self.baseDir = None
+			self.basedir = None
 			self.scriptsDir = None
 			self.atlasDir = None
 			self.AFNIDir = None
@@ -30,7 +30,13 @@ class config():
 			self.timingFiles = None
 			self.t1_image = None
 			self.epi_series = None
-			self.name = None
+			self.confName = None
+			self.fs_input = 'aseg.mgz'
+		
+			# subject Directories...: *************** should we instantiate them here?
+			self.subjDir = self.basedir + '/%s/'
+			self.subjfMRIDir = self.subjDir + '/fMRI/'
+			self.subj
 		else:
 			attr = parseTextFile(config)
 			for key in attr:
@@ -41,7 +47,7 @@ class config():
 	def getBaseDir(self):
 		string = raw_input('Give your base output directory: ')
 		string = string.strip()
-		self.baseDir = string
+		self.basedir = string
 
 	def getScriptsDir(self):
 		string = raw_input('Give the scripts directory [default: basedir/scripts/]: ')
@@ -102,13 +108,12 @@ class config():
 
 	def getRawDataDir(self):
 		print 'Input the raw data for each subject:'
-		print "Note, indicate subject number by '%subj'"
-		print "For example, if you have subjects 401 and 402, and their raw data directory is: /projects/preprocessingDir/rawdata/401/, and /projects/preprocessingDir/rwadata/402/, you would indicate this by inputting '/projects/preprocessingDir/rawdata/%subj' "
+		print "Note, indicate subject number by '%s'"
+		print "For example, if you have subjects 401 and 402, and their raw data directory is: /projects/preprocessingDir/rawdata/401/, and /projects/preprocessingDir/rwadata/402/, you would indicate this by inputting '/projects/preprocessingDir/rawdata/%s' "
 		string = raw_input("Give the directory of the raw data for each subject: ")
 		string = string.strip()
-		string = string.split('%subj')
-		# Note to self, when constructing a subject's raw data directory, remember that self.rawDataDir is a 2 element list
 		self.rawDataDir = string
+		# Note to self, when constructing a subject's raw data directory, remember that self.rawDataDir is a 2 element list
 
 	def getTimingFiles(self):
 		string = raw_input("If applicable, give the stimulus timing files. Note, all timing files for all subjects should be in the same directory. Enter nothing if not applicable: ")
@@ -117,8 +122,9 @@ class config():
 
 	def rawDataParams(self):
 		sampleSubj = self.listOfSubjs[0]
-		sampleRawDataDir = self.rawDataDir[0] + sampleSubj + self.rawDataDir[1]
-		rawDataContents = os.listdir(sampleRawDataDir)
+		findRawDataDir = self.rawDataDir.split('%s')
+		sampleRawData = findRawDataDir[0] + sampleSubj + findRawDataDir[1]
+		rawDataContents = os.listdir(sampleRawData)
 		rawDataContents = dict(enumerate(rawDataContents))
 		for key,value in zip(rawDataContents.keys(), rawDataContents.values()):
 			print key, ':', value
@@ -148,10 +154,10 @@ class config():
 			print "File already exists."
 			return
 		else:
-			self.name = string
+			self.confName = string
 
 	def write2Conf(self):
-		newtext = open(self.name, 'w')
+		newtext = open(self.confName, 'w')
 		for key,value in zip(self.__dict__.keys(), self.__dict__.values()):
 			newtext.write(str(key) + ' = ' + str(value) + '\n')
 		newtext.close()
@@ -173,7 +179,17 @@ class config():
 		self.rawDataParams()
 		self.write2Conf()
 		print 'Configuration file complete.  Writing to file in current working directory, titled:', self.name
+		print 'All outputs will be '
 
+	def setDefaults(self):
+		"""
+		Will output a default config file, most parameters will be set to None
+		"""
+		self.generateConfFile()
+		self.write2Conf()
+
+	def constructSubjDirs(self):
+		pass #NEED TO DECIDE how to construct subject directories!!
 
 
 
