@@ -11,24 +11,32 @@ class config():
 	Each parameter has its own attribute, with the value of the attribute being the parameter.
 	"""
 	# initialize empty parameters
-	def __init__(self):
-		self.baseDir = None
-		self.scriptsDir = None
-		self.atlasDir = None
-		self.AFNIDir = None
-		self.FSDir = None
-		self.numRuns = None
-		self.numTRs = None
-		self.TR_length = None
-		self.smoothingParam = None
-		self.tpattern = None
-		self.listOfSubjs = None
-		self.analysisName = None
-		self.rawDataDir = None
-		self.timingFiles = None
-		self.t1_image = None
-		self.epi_series = None
-		self.name = None
+	def __init__(self, config=None):
+		# Either initialize the config object's attributes to None, or input a config file and update/re-update this config object's attributes.
+		if config==None:
+			self.baseDir = None
+			self.scriptsDir = None
+			self.atlasDir = None
+			self.AFNIDir = None
+			self.FSDir = None
+			self.numRuns = None
+			self.numTRs = None
+			self.TR_length = None
+			self.smoothingParam = None
+			self.tpattern = None
+			self.listOfSubjs = None
+			self.analysisName = None
+			self.rawDataDir = None
+			self.timingFiles = None
+			self.t1_image = None
+			self.epi_series = None
+			self.name = None
+		else:
+			attr = parseTextFile(config)
+			for key in attr:
+				setattr(self, key, initial_data[key])
+
+
 
 	def getBaseDir(self):
 		string = raw_input('Give your base output directory: ')
@@ -144,19 +152,9 @@ class config():
 
 	def write2Conf(self):
 		newtext = open(self.name, 'w')
-		newtext.write('conf = { ')
 		for key,value in zip(self.__dict__.keys(), self.__dict__.values()):
-			newtext.write(str(key) + ' : ' + str(value) + '\n')
-		newtext.write('}')
+			newtext.write(str(key) + ' = ' + str(value) + '\n')
 		newtext.close()
-
-	def readFromConf(self):
-		"""
-		be able to read and re-update conf object from conf file
-		"""
-
-		pass 
-			
 
 
 	def run(self):
@@ -176,14 +174,34 @@ class config():
 		self.write2Conf()
 
 
-class subjConf(config):
-	"""
-	Creates an individualized subject config (with complete subject locations)
-	"""
-	def __init__(self, config, subj):
-		self.config = config
-		self.subj = subj
 
+
+
+
+
+# Helper functions:
+
+# Ensure directory exists    
+def ensureDir(f):
+    d = os.path.dirname(f)
+    if not os.path.exists(d):
+        os.makedirs(d)
+
+def parseTextFile(file):
+	""""
+	Parses a text file of parameters/variables separated by equal signs, and returns a string
+	Intended for use of parsing *.conf files
+	"""
+	dic = {}
+	with open(file) as f:
+		for line in f:
+			(key, val) = line.split('=')
+			key = key.strip()
+			val = val.strip()
+
+			dic[key] = val
+
+	return dic
 
 
 
