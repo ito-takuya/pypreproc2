@@ -34,7 +34,7 @@ class config():
 		else:
 			attr = parseTextFile(config)
 			for key in attr:
-				setattr(self, key, initial_data[key])
+				setattr(self, key, attr[key])
 
 
 
@@ -172,6 +172,7 @@ class config():
 		self.getTimingFiles()
 		self.rawDataParams()
 		self.write2Conf()
+		print 'Configuration file complete.  Writing to file in current working directory, titled:', self.name
 
 
 
