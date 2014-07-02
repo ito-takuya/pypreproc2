@@ -193,7 +193,19 @@ class config():
 
 
 
+class subjConfig():
+	def __init__(self, conf, subj):
+		# Raise error if subjects is not in listOfSubjects
+		if not subj in conf.listOfSubjects:
+			raise('Internal Error, subj not defined in conf.listOfSubjects')
 
+		confdic = conf.__dict__
+		setattr(self, 'subjID', subj) # Set object attribute for subject ID
+		for key in confdic:
+			if '%s' in confdic[key]:
+				confdic[key] = confdic[key].replace('%s',subj)
+			# set all other attributes from config for subjconfig, except listOfSubjects
+			if key != 'listOfSubjects': setattr(self, key, confdic[key].strip("'")) 
 
 
 # Helper functions:
@@ -212,11 +224,12 @@ def parseTextFile(file):
 	dic = {}
 	with open(file) as f:
 		for line in f:
-			(key, val) = line.split('=')
-			key = key.strip()
-			val = val.strip()
-
-			dic[key] = val
+			if '=' in line:
+				# If there's an equal sign, assign it a key - val pair			
+				(key, val) = line.split('=')
+				key = key.strip()
+				val = val.strip()
+				dic[key] = val
 
 	return dic
 
