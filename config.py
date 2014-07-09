@@ -3,9 +3,9 @@
 # Creates config file to get correct inputs for execution blocks
 
 import os
+import yaml
 
-
-class config():
+class Config():
 	"""
 	Creates a configuration object (that writes to a .conf file) containing all necessary data parameters.
 	Each parameter has its own attribute, with the value of the attribute being the parameter.
@@ -38,9 +38,9 @@ class config():
 			self.subjfMRIDir = self.subjDir + '/fMRI/'
 			self.subj
 		else:
-			attr = parseTextFile(config)
-			for key in attr:
-				setattr(self, key, attr[key])
+			parameters = yaml.load(open(config,'r'))
+			for key in parameters:
+				setattr(self, key, parameters[key])
 
 
 
@@ -193,7 +193,7 @@ class config():
 
 
 
-class subjConfig():
+class SubjConfig():
 	def __init__(self, conf, subj):
 		# Raise error if subjects is not in listOfSubjects
 		if not subj in conf.listOfSubjects:
@@ -216,22 +216,22 @@ def ensureDir(f):
     if not os.path.exists(d):
         os.makedirs(d)
 
-def parseTextFile(file):
-	""""
-	Parses a text file of parameters/variables separated by equal signs, and returns a string
-	Intended for use of parsing *.conf files
-	"""
-	dic = {}
-	with open(file) as f:
-		for line in f:
-			if '=' in line:
-				# If there's an equal sign, assign it a key - val pair			
-				(key, val) = line.split('=')
-				key = key.strip()
-				val = val.strip()
-				dic[key] = val
+# def parseTextFile(file):
+# 	""""
+# 	Parses a text file of parameters/variables separated by equal signs, and returns a string
+# 	Intended for use of parsing *.conf files
+# 	"""
+# 	dic = {}
+# 	with open(file) as f:
+# 		for line in f:
+# 			if '=' in line:
+# 				# If there's an equal sign, assign it a key - val pair			
+# 				(key, val) = line.split('=')
+# 				key = key.strip()
+# 				val = val.strip()
+# 				dic[key] = val
 
-	return dic
+# 	return dic
 
 
 

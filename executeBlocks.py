@@ -40,7 +40,7 @@ def prepareMPRAGE(conf, logname):
     ####
     # Skull strip MPRAGE
     # Use Freesurfer's skullstripping (very slow, but more accurate)
-    if conf.runFreesurfer == 'True':
+    if conf.runFreesurfer == True:
         run_shell_cmd('recon-all -subject ' + conf.subjID + ' -all -sd ' + conf.freesurferDir + ' -i mprage.nii.gz',logname)
 
 
@@ -100,8 +100,8 @@ def prepareEPI(conf, logname):
         run_shell_cmd('rm -rf ' + conf.basedir + '/SortedDICOMs/Run' + str(runNum),logname)
 
         # If numTRsToSkip > 0, remove the first couple TRs for every epi run
-        if conf.numTRsToSkip > 0:
-            run_shell_cmd('3dcalc -a epi_r' + str(runNum) + '+orig"[${numTRsToSkip}..$]" -expr ' + "'a' -prefix epi_r" + str(runNum) + ' -overwrite', logname)
+        if conf.numTRsToSkip > '0':
+            run_shell_cmd('3dcalc -a epi_r' + str(runNum) + '+orig"[' + conf.numTRsToSkip + '..$]" -expr ' + "'a' -prefix epi_r" + str(runNum) + ' -overwrite', logname)
 
         conf.nextInputFilename.append('epi')
 
@@ -123,9 +123,9 @@ def sliceTimeCorrection(conf, logname):
 
         print ' - Slice Time Correction for Run', runNum, '-'
         
-        run_shell_cmd('3dTshift -overwrite -Fourier -TR ' + conf.TR + ' -tpattern ' + conf.tpattern + ' -prefix stc_' + conf.nextInputFilename + '_r' + str(runNum) + ' ' + conf.nextInputFilename + '_r' + str(runNum) + '+orig', logname)
+        run_shell_cmd('3dTshift -overwrite -Fourier -TR ' + conf.TR + ' -tpattern ' + conf.tpattern + ' -prefix stc_' + conf.nextInputFilename[-1] + '_r' + str(runNum) + ' ' + conf.nextInputFilename[-1] + '_r' + str(runNum) + '+orig', logname)
         
-        rmFileName = glob.glob(conf.nextInputFilename + '_r' + str(runNum) + '????.????.gz')
+        rmFileName = glob.glob(conf.nextInputFilename[-1] + '_r' + str(runNum) + '????.????.gz')
         if rmFileName:
             run_shell_cmd('rm -v ' + rmFilename,logname)
 
@@ -145,7 +145,7 @@ def concatenateRuns(conf, logname):
 
     # Construct Run List
     for runNum in range(1, numRuns+1):
-        runList = runList + ' ' + conf.subjfMRIDir + conf.nextInputFilename + '_r' + str(runNum) + '+orig'
+        runList = runList + ' ' + conf.subjfMRIDir + conf.nextInputFilename[-1] + '_r' + str(runNum) + '+orig'
         concatString = concatString + ' ' + str(TRCount)
         TRCount = TRCount + conf.numTRs  ###EDIT THIS!!!
 
@@ -154,11 +154,11 @@ def concatenateRuns(conf, logname):
     print 'Concatenation string (onset times of each run):', concatString
 
     # Run command
-    run_shell_cmd('rm -v ' + conf.nextInputFilename + '_allruns+orig*',logname)
-    run_shell_cmd('3dTcat -prefix ' + conf.nextInputFilename + '_allruns ' + runList,logname)
+    run_shell_cmd('rm -v ' + conf.nextInputFilename[-1] + '_allruns+orig*',logname)
+    run_shell_cmd('3dTcat -prefix ' + conf.nextInputFilename[-1] + '_allruns ' + runList,logname)
 
     # Remove intermediate analysis file to save disk space
-    rm_file = glob.glob(conf.nextInputFilename + 'r_*+????.????.gz')
+    rm_file = glob.glob(conf.nextInputFilename[-1] + 'r_*+????.????.gz')
     if rm_file: 
         run_shell_cmd('rm -v ' + rm_file,logname)
 
@@ -178,7 +178,7 @@ def talairachAlignment(conf,logname):
     #### Talairach transform anatomical image
     print '-Run @auto_tlrc to talairach transform anatomical T1 image-'
     run_shell_cmd('@auto_tlrc -base ' + conf.atlasDir + '/MNI_avg152T1+tlrc -input anat_mprage_skullstripped+orig -no_ss',logname)
-    run_shell_cmd('ln -s ' + atlasDir + '/MNI_avg152T1+tlrc* .',logname)
+    run_shell_cmd('ln -s ' + conf.atlasDir + '/MNI_avg152T1+tlrc* .',logname)
     run_shell_cmd('3dcopy anat_mprage_skullstripped+tlrc anat_mprage_skullstripped_tlrc.nii.gz', logname) #format into NIFTI format
 
     # Create Mask
@@ -196,11 +196,11 @@ def talairachAlignment(conf,logname):
     # [You could alternatively analyze all of the data, then Talairach transform the statistics (though this would make extraction of time series based on Talairached ROIs difficult)]
     # Visit for more info: http://afni.nimh.nih.gov/pub/dist/doc/program_help/align_epi_anat.py.html
 
-    run_shell_cmd('align_epi_anat.py -overwrite -anat anat_mprage_skullstripped+orig -epi ' + conf.nextInputFilename + '+orig -epi_base 10 -epi2anat -anat_has_skull no -AddEdge -epi_strip 3dSkullStrip -ex_mode quiet -volreg on -deoblique on -tshift off -tlrc_apar anat_mprage_skullstripped+tlrc -master_tlrc ' +  conf.atlasDir + '/MNI_EPI_333+tlrc',logname)
+    run_shell_cmd('align_epi_anat.py -overwrite -anat anat_mprage_skullstripped+orig -epi ' + conf.nextInputFilename[-1] + '+orig -epi_base 10 -epi2anat -anat_has_skull no -AddEdge -epi_strip 3dSkullStrip -ex_mode quiet -volreg on -deoblique on -tshift off -tlrc_apar anat_mprage_skullstripped+tlrc -master_tlrc ' +  conf.atlasDir + '/MNI_EPI_333+tlrc',logname)
 
     # Convert to NIFTI
-    run_shell_cmd('3dcopy ' + conf.nextInputFilename + '_tlrc_al+tlrc ' + conf.nextInputFilename + '_tlrc_al.nii.gz',logname)
-    run_shell_cmd('cp ' + conf.nextInputFilename + "_vr_motion.1D allruns_motion_params.1D",logname)
+    run_shell_cmd('3dcopy ' + conf.nextInputFilename[-1] + '_tlrc_al+tlrc ' + conf.nextInputFilename[-1] + '_tlrc_al.nii.gz',logname)
+    run_shell_cmd('cp ' + conf.nextInputFilename[-1] + "_vr_motion.1D allruns_motion_params.1D",logname)
 
 
     # Update conf object
@@ -229,8 +229,8 @@ def timeSeriesExtraction(conf, logname):
     os.chdir(conf.subjfMRIDir)
 
     print '--Extract time series from white matter, ventricle masks--'
-    run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_wmMask_func_eroded.nii.gz ' + conf.nextInputFilename + '.nii.gz > ' + conf.subjID + '_WM_timeseries_rest.1D',logname)
-    run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_ventricles_func_eroded.nii.gz ' + conf.nextInputFilename + '.nii.gz > ' + conf.subjID + '_ventricles_timeseries_rest.1D',logname)
+    run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_wmMask_func_eroded.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.subjID + '_WM_timeseries_rest.1D',logname)
+    run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_ventricles_func_eroded.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.subjID + '_ventricles_timeseries_rest.1D',logname)
 
 
     print '--Extract whole brain signal--'        
@@ -243,14 +243,77 @@ def timeSeriesExtraction(conf, logname):
     run_shell_cmd("3dcalc -overwrite -a " + conf.subjID + "_fs_seg.nii.gz -expr 'ispositive(a)' -prefix " + conf.subjID + '_wholebrainmask.nii.gz',logname)
 
     # Resample to functional space
-    run_shell_cmd('3dresample -overwrite -master ' + conf.subjfMRIDir + conf.nextInputFilename + '.nii.gz -inset ' + conf.subjID + '_wholebrainmask.nii.gz -prefix ' + conf.subjID + '_wholebrainmask_func.nii.gz',logname)
+    run_shell_cmd('3dresample -overwrite -master ' + conf.subjfMRIDir + conf.nextInputFilename[-1] + '.nii.gz -inset ' + conf.subjID + '_wholebrainmask.nii.gz -prefix ' + conf.subjID + '_wholebrainmask_func.nii.gz',logname)
 
     # Dilate mask by 1 functional voxel (just in case the resampled anatomical mask is off by a bit)
     run_shell_cmd("3dLocalstat -overwrite -nbhd 'SPHERE(-1)' -stat 'max' -prefix " + conf.subjID + '_wholebrainmask_func_dil1vox.nii.gz ' + conf.subjID + '_wholebrainmask_func.nii.gz',logname)
 
     os.chdir(conf.subjfMRIDir)
-    run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_wholebrainmask_func_dil1vox.nii.gz ' + conf.nextInputFilename + '.nii.gz > ' + conf.subjID + '_wholebrainsignal_timeseries_rest.1D',logname)
+    run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_wholebrainmask_func_dil1vox.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.subjID + '_wholebrainsignal_timeseries_rest.1D',logname)
 
     # No updates in this block to conf
     return conf
 
+
+def runGLM(conf,logname):
+    os.chdir(conf.subjfMRIDir)
+
+    run_shell_cmd('cp Movement_Regressors_Rest_allruns.1D rest_allruns_motion_params.1D', logname)
+
+    run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.subjID + '_WM_timeseries_rest.1D -derivative -write ' + conf.subjID + '_WM_timeseries_deriv_rest.1D', logname)
+    run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.subjID + '_ventricles_timeseries_rest.1D -derivative -write ' + conf.subjID + '_ventricles_timeseries_deriv_rest.1D', logname)
+    run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.subjID + '_wholebrainsignal_timeseries_rest.1D -derivative -write ' + conf.subjID + '_wholebrainsignal_timeseries_deriv_rest.1D', logname)
+
+    print 'Run GLM to remove nuisance time series (motion, white matter, ventricles)'
+    input = '-input ' + conf.nextInputFilename[-1] + '.nii.gz '
+    mask = '-mask ' + conf.subjMaskDir + conf.subjID + '_gmMask_func_dil1vox.nii.gz '
+    # concat = '-concat ' + '"' + conf.concatString + '" '
+    concat = ''
+    polort = '-polort 1 '
+    num_stimts = '-num_stimts 12 '
+    stimfile1 = '-stim_file 1 ' + conf.subjID + '_WM_timeseries_rest.1D -stim_label 1 WM '
+    stimfile2 = '-stim_file 2 ' + conf.subjID + '_ventricles_timeseries_rest.1D -stim_label 2 Vent '
+    stimfile3 = '-stim_file 3 ' + conf.subjID + '_WM_timeseries_deriv_rest.1D -stim_label 3 WMDeriv '
+    stimfile4 = '-stim_file 4 ' + conf.subjID + '_ventricles_timeseries_deriv_rest.1D -stim_label 4 VentDeriv '
+    stimfile5 = "-stim_file 5 rest_allruns_motion_params.1D'[0]' -stim_base 5 "
+    stimfile6 = "-stim_file 6 rest_allruns_motion_params.1D'[1]' -stim_base 6 "
+    stimfile7 = "-stim_file 7 rest_allruns_motion_params.1D'[2]' -stim_base 7 "
+    stimfile8 = "-stim_file 8 rest_allruns_motion_params.1D'[3]' -stim_base 8 "
+    stimfile9 = "-stim_file 9 rest_allruns_motion_params.1D'[4]' -stim_base 9 "
+    stimfile10 = "-stim_file 10 rest_allruns_motion_params.1D'[5]' -stim_base 10 "
+    # stimfile11 = "-stim_file 11 rest_allruns_motion_params.1D'[6]' -stim_base 11 "
+    # stimfile12 = "-stim_file 12 rest_allruns_motion_params.1D'[7]' -stim_base 12 "
+    # stimfile13 = "-stim_file 13 rest_allruns_motion_params.1D'[8]' -stim_base 13 "
+    # stimfile14 = "-stim_file 14 rest_allruns_motion_params.1D'[9]' -stim_base 14 "
+    # stimfile15 = "-stim_file 15 rest_allruns_motion_params.1D'[10]' -stim_base 15 "
+    # stimfile16 = "-stim_file 16 rest_allruns_motion_params.1D'[11]' -stim_base 16 "
+    stimfile11 = "-stim_file 11 " + conf.subjID + '_wholebrainsignal_timeseries_rest.1D -stim_label 11 WholeBrain '
+    stimfile12 = "-stim_file 12 " + conf.subjID + '_wholebrainsignal_timeseries_deriv_rest.1D -stim_label 12 WholeBrainDeriv '
+    xsave = '-xsave -x1D xmat_rall.x1D -xjpeg xmat_rall.jpg -errts NuissanceResid_Resids '
+    jobs = '-jobs 1 -float -noFDR '
+    bucket = '-bucket NuissanceResid_outbucket_' + conf.nextInputFilename[-1] + '+tlrc -overwrite' 
+
+    glm_command = '3dDeconvolve ' + input + mask + concat + polort + num_stimts + stimfile1 + stimfile2 + stimfile3 + stimfile4 + stimfile5 + stimfile6 + stimfile7 + stimfile8 + stimfile9 + stimfile10 + stimfile11 + stimfile12 + xsave + jobs + bucket
+
+    run_shell_cmd(glm_command, logname)
+
+    run_shell_cmd('rm NuissanceResid_' + conf.nextInputFilename[-1] + '*', logname)
+    run_shell_cmd('3dcopy NuissanceResid_Resids+tlrc NuissanceResid_' + conf.nextInputFilename[-1] + '+tlrc', logname)
+    run_shell_cmd('rm NuissanceResid_Resids+tlrc', logname)
+
+    conf.nextInputFilename.append('NuissanceResid_' + conf.nextInputFilename[-1])
+
+    return conf
+
+
+def spatialSmoothing(conf, logname):
+
+    os.chdir(conf.subjfMRIDir)
+
+    print '-Spatially smooth data-'
+
+    run_shell_cmd('3dBlurInMask -input ' + conf.nextInputFilename[-1] + '+tlrc -FWHM ' + conf.FWHMSmoothing + ' -mask ' + conf.subjMaskDir + conf.subjID + '_gmMask_func_dil1vox.nii.gz -prefix smInMask_' + conf.nextInputFilename[-1] + '.nii.gz', logname)
+
+    conf.nextInputFilename.append('smInMask_' + conf.nextInputFilename[-1])
+
+    return conf

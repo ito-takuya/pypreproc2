@@ -13,7 +13,7 @@ def create_gmMask(conf, logname):
 
 	# Parse out important parameters for this block
 	subj = conf.subjID 
-	nextInputFilename = conf.nextInputFilename
+	nextInputFilename = conf.nextInputFilename[-1]
 	subjMaskDir = conf.subjMaskDir
 	subjfMRIDir = conf.subjfMRIDir
 	freesurferDir = conf.freesurferDir
@@ -55,7 +55,7 @@ def create_gmMask(conf, logname):
 	# Make mask binary
 	run_shell_cmd("3dcalc -a " + str(subj) + "mask_temp.nii.gz -expr 'ispositive(a)' -prefix " + str(subj) + '_gmMask.nii.gz -overwrite',logname)
 
-	if hcpdata == 'False':
+	if hcpdata == False:
 		# Transform to TLRC space
 		# First convert files from NIfTI to AFNI
 		run_shell_cmd('3dcopy ' + subjMaskDir + str(subj) + '_gmMask.nii.gz ' + subjMaskDir + str(subj) + '_gmMask', logname)
@@ -77,6 +77,8 @@ def create_gmMask(conf, logname):
 	run_shell_cmd('rm ' + str(subj) + 'mask_temp.nii.gz',logname)
 
 
+	return conf
+
 
 
 def create_wmMask(conf, logname):
@@ -85,7 +87,7 @@ def create_wmMask(conf, logname):
 	"""
 	# Parse out important parameters for this block
 	subj = conf.subjID 
-	nextInputFilename = conf.nextInputFilename
+	nextInputFilename = conf.nextInputFilename[-1]
 	subjMaskDir = conf.subjMaskDir
 	subjfMRIDir = conf.subjfMRIDir
 	freesurferDir = conf.freesurferDir
@@ -127,7 +129,7 @@ def create_wmMask(conf, logname):
 	run_shell_cmd("3dcalc -a " + str(subj) + "mask_temp.nii.gz -expr 'ispositive(a)' -prefix " + str(subj) + '_wmMask.nii.gz -overwrite',logname)
 
 	# Transform to TLRC space
-	if hcpdata == 'False':
+	if hcpdata == False:
 		# Transform to TLRC space
 		# First convert files from NIfTI to AFNI
 		run_shell_cmd('3dcopy ' + subjMaskDir + str(subj) + '_wmMask.nii.gz ' + subjMaskDir + str(subj) + '_wmMask', logname)
@@ -148,6 +150,9 @@ def create_wmMask(conf, logname):
 	run_shell_cmd('rm ' + str(subj) + 'mask_temp.nii.gz',logname)
 
 
+	return conf
+
+
 def createVentricleMask(conf, logname):
 	"""
 	Creates ventricle masks in subjMaskDir
@@ -155,7 +160,7 @@ def createVentricleMask(conf, logname):
 
 	# Parse out important parameters for this block
 	subj = conf.subjID 
-	nextInputFilename = conf.nextInputFilename
+	nextInputFilename = conf.nextInputFilename[-1]
 	subjMaskDir = conf.subjMaskDir
 	subjfMRIDir = conf.subjfMRIDir
 	freesurferDir = conf.freesurferDir
@@ -191,7 +196,7 @@ def createVentricleMask(conf, logname):
 	run_shell_cmd("3dcalc -a " + str(subj) + "mask_temp.nii.gz -expr 'ispositive(a)' -prefix " + str(subj) + '_ventricles.nii.gz -overwrite',logname)
 
 	# Transform to TLRC space
-	if hcpdata == 'False':
+	if hcpdata == False:
 		# Transform to TLRC space
 		# First convert files from NIfTI to AFNI
 		run_shell_cmd('3dcopy ' + subjMaskDir + str(subj) + '_ventricles.nii.gz ' + subjMaskDir + str(subj) + '_ventricles', logname)
@@ -212,6 +217,7 @@ def createVentricleMask(conf, logname):
 	run_shell_cmd('3dcalc -a ' + str(subj) + '_ventricles_func.nii.gz -b ' + str(subj) + "_gmMask_func_dil1vox.nii.gz -expr 'step(a-b)' -prefix " + str(subj) + '_ventricles_func_eroded.nii.gz -overwrite',logname)
 	run_shell_cmd('rm ' + str(subj) + 'mask_temp.nii.gz',logname)            
 
+	return conf
 
 
 

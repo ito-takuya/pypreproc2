@@ -22,15 +22,21 @@ from multiprocessing import Pool
 configfile = '/projects/IndivRITL/docs/scripts/pypreproc/pilotPreproc.conf'
 
 # Creates new conf file
-conf = config.config(configfile)
-sconf = config.subjConfig(conf,'001t')
+conf = config.Config(configfile)
+conf.nextInputFilename = conf.nextInputFilename.split(',')
+conf.numTRs = len(conf.epi_series)
+
+sconf = config.SubjConfig(conf,'001t')
 sconf = utils.createLogFile(sconf[0])
 sconf = block.prepareMPRAGE(sconf, sconf.logname)
 sconf = block.prepareEPI(sconf, sconf.logname)
 sconf = block.concatenateRuns(sconf, sconf.logname)
 sconf = block.talairachAlignment(sconf, sconf.logname)
 sconf = block.checkMotionParams(sconf, sconf.logname)
-
+sconf = maskbin.create_gmMask(sconf, sconf.logname)
+sconf = maskbin.create_wmMask(sconf, sconf.logname)
+sconf = maskbin.createVentricleMask(sconf, sconf.logname)
+sconf = block.timeSeriesExtraction(sconf, sconf.logname)
 
 
 
