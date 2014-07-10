@@ -19,31 +19,45 @@ import utils
 import executeBlocks as block
 from multiprocessing import Pool
 
-configfile = '/projects/IndivRITL/docs/scripts/pypreproc/pilotPreproc.conf'
+configfile = '/projects/IndivRITL/docs/scripts/pypreproc/pilotPreproc.yaml'
+
+configfile = raw_input('Give the full path of your configuration file (with a .yaml extension): ')
 
 # Creates new conf file
 conf = config.Config(configfile)
-conf.nextInputFilename = conf.nextInputFilename.split(',')
-conf.numTRs = len(conf.epi_series)
 
-sconf = config.SubjConfig(conf,'001t')
-sconf = utils.createLogFile(sconf[0])
-sconf = block.prepareMPRAGE(sconf, sconf.logname)
-sconf = block.prepareEPI(sconf, sconf.logname)
-sconf = block.concatenateRuns(sconf, sconf.logname)
-sconf = block.talairachAlignment(sconf, sconf.logname)
-sconf = block.checkMotionParams(sconf, sconf.logname)
-sconf = maskbin.create_gmMask(sconf, sconf.logname)
-sconf = maskbin.create_wmMask(sconf, sconf.logname)
-sconf = maskbin.createVentricleMask(sconf, sconf.logname)
-sconf = block.timeSeriesExtraction(sconf, sconf.logname)
-
-
-
-
-# create an array of sconfs for all subjects
-sconfs_list = []
+# Creating a list of subject config files (an iterable to be input)
+sconf = [] 
+subjCount = 0
 for subj in conf.listOfSubjects:
-	sconfs_list.append(config.subjConfig(conf,subj))
+	sconf.append(config.SubjConfig(conf,subj))
+	utils.ensureSubjDirsExist(sconf[subjCount])
+	utils.createLogFile(sconf[subjCount])
+	subjCount += 1
+
+def pipeline(sconf):
+	sconf = block.prepareMPRAGE(sconf)
+	sconf = block.prepareEPI(sconf)
+	# sconf = block.concatenateRuns(sconf, sconf.logname)
+	sconf.nextInputFilename[-1] = 'epi_r1'
+	sconf = block.talairachAlignment(sconf)
+	sconf = block.checkMotionParams(sconf)
+	sconf = maskbin.create_gmMask(sconf)
+	sconf = maskbin.create_wmMask(sconf)
+	sconf = maskbin.createVentricleMask(sconf)
+	sconf = block.timeSeriesExtraction(sconf)
+	sconf = block.runGLM(sconf)
+	sconf = block.spatialSmoothing(sconf)
+
+def runParallel(conf, sconf):
+	pool = Pool(processes=conf.nproc)
+	pool.map_async(pipeline, sconf).get(9999999)
+
+
+runParallel(conf,sconf)
+
+
+
+
 
 

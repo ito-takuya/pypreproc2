@@ -32,7 +32,6 @@ class Config():
 			self.epi_series = None
 			self.confName = None
 			self.fs_input = 'aseg.mgz'
-		
 			# subject Directories...: *************** should we instantiate them here?
 			self.subjDir = self.basedir + '/%s/'
 			self.subjfMRIDir = self.subjDir + '/fMRI/'
@@ -41,8 +40,11 @@ class Config():
 			parameters = yaml.load(open(config,'r'))
 			for key in parameters:
 				setattr(self, key, parameters[key])
+				if key == 'epi_series':
+					self.numRuns = len(parameters[key])
+					
 
-
+	# Anything below this comment (within this Config class) is still in development.  Eventually I would lie to reach the point where we can set all the parameters through a prompt from the console, but this is of lower priority.
 
 	def getBaseDir(self):
 		string = raw_input('Give your base output directory: ')
@@ -147,8 +149,8 @@ class Config():
 
 	def generateConfFile(self):
 		string = raw_input('Give the name of your configuration file: ')
-		string = string if string else "default.conf"
-		string = string if (len(string) > 5 and string[-5:] == ".conf") else string + ".conf"
+		string = string if string else "default.yaml"
+		string = string if (len(string) > 5 and string[-5:] == ".yaml") else string + ".yaml"
 	    # Make sure that file doesn't already exist
 		if os.path.exists(string):
 			print "File already exists."
@@ -156,16 +158,12 @@ class Config():
 		else:
 			self.confName = string
 
-	def write2Conf(self):
 		newtext = open(self.confName, 'w')
-		for key,value in zip(self.__dict__.keys(), self.__dict__.values()):
-			newtext.write(str(key) + ' = ' + str(value) + '\n')
-		newtext.close()
-
+		with open(self.confName, 'w') as outfile:
+			outfile.write( yaml.dump(data, default_flow_style=True) )
 
 	def run(self):
 		# gather all inputs (run all methods)
-		self.generateConfFile()
 		self.getBaseDir()
 		self.getScriptsDir()
 		self.getAtlasDir()
@@ -177,7 +175,8 @@ class Config():
 		self.getRawDataDir()
 		self.getTimingFiles()
 		self.rawDataParams()
-		self.write2Conf()
+		self.generateConfFile()
+
 		print 'Configuration file complete.  Writing to file in current working directory, titled:', self.name
 		print 'All outputs will be '
 
@@ -188,8 +187,6 @@ class Config():
 		self.generateConfFile()
 		self.write2Conf()
 
-	def constructSubjDirs(self):
-		pass #NEED TO DECIDE how to construct subject directories!!
 
 
 
@@ -202,10 +199,12 @@ class SubjConfig():
 		confdic = conf.__dict__
 		setattr(self, 'subjID', subj) # Set object attribute for subject ID
 		for key in confdic:
-			if '%s' in confdic[key]:
-				confdic[key] = confdic[key].replace('%s',subj)
-			# set all other attributes from config for subjconfig, except listOfSubjects
-			if key != 'listOfSubjects': setattr(self, key, confdic[key].strip("'")) 
+			# Make sure parameter we're checking is a string
+			if type(confdic[key]) == str: 
+				if '%s' in confdic[key]:
+					confdic[key] = confdic[key].replace('%s', subj)
+				# set all other attributes from config for subjconfig, except listOfSubjects
+			if key != 'listOfSubjects': setattr(self, key, confdic[key]) 
 
 
 # Helper functions:

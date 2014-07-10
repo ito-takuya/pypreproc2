@@ -6,7 +6,7 @@
 import os
 from run_shell_cmd import *
 
-def create_gmMask(conf, logname):
+def create_gmMask(conf):
 	"""
 	Creates a gmMask in subjMaskDir
 	"""
@@ -19,6 +19,7 @@ def create_gmMask(conf, logname):
 	freesurferDir = conf.freesurferDir
 	hcpdata = conf.hcpData 
 	input = conf.fs_input
+	logname = conf.logname
 
 	os.chdir(subjMaskDir)
 
@@ -81,7 +82,7 @@ def create_gmMask(conf, logname):
 
 
 
-def create_wmMask(conf, logname):
+def create_wmMask(conf):
 	"""
 	Creates a wmMask in subjMaskDir
 	"""
@@ -93,6 +94,7 @@ def create_wmMask(conf, logname):
 	freesurferDir = conf.freesurferDir
 	hcpdata = conf.hcpData 
 	input = conf.fs_input
+	logname = conf.logname
 
 	os.chdir(subjMaskDir)
     
@@ -153,12 +155,13 @@ def create_wmMask(conf, logname):
 	return conf
 
 
-def createVentricleMask(conf, logname):
+def createVentricleMask(conf):
 	"""
 	Creates ventricle masks in subjMaskDir
 	"""
 
 	# Parse out important parameters for this block
+	logname = conf.logname
 	subj = conf.subjID 
 	nextInputFilename = conf.nextInputFilename[-1]
 	subjMaskDir = conf.subjMaskDir

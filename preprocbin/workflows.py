@@ -74,11 +74,6 @@ class Pipeline():
 
 
 
-class prepareMPRAGE(ExecuteBlock):
-    def __init__(self, config=None, *args, **kwargs):
-        super(prepareMPRAGE, self).__init__(*args, **kwargs)
-        self.config = config
-
 
 
 

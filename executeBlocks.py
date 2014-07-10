@@ -9,13 +9,14 @@ import os
 import glob
 import maskbin
 
-def prepareMPRAGE(conf, logname):
+def prepareMPRAGE(conf):
     """
     DESCRIPTION: Prepares and compiles anatomical MRPRAGE from raw DICOM files.  Not for HCP data use.  For use on a single subject.
     PARAMETERS: 
     	conf - a subjectConfig file
     	logname - subject's log output filename
     """
+    logname = conf.logname
     os.chdir(conf.subjfMRIDir) #change working directory to fMRI directory
         
     print 'Preparing MPRAGE file (anatomical image)'
@@ -57,13 +58,14 @@ def prepareMPRAGE(conf, logname):
 
     return conf
 
-def prepareEPI(conf, logname):
+def prepareEPI(conf):
     """
     DESCRIPTION: Converts fMRI data to AFNI format from raw DICOMs.
     PARAMETERS: 
     	conf - a subjectConfig file
     	logname - subject's log output filename
     """
+    logname = conf.logname
     os.chdir(conf.subjfMRIDir)
 
     numRuns = len(conf.epi_series)
@@ -109,13 +111,14 @@ def prepareEPI(conf, logname):
     return conf
 
     # 3rd Execute Block - Slice Time Correction
-def sliceTimeCorrection(conf, logname):
+def sliceTimeCorrection(conf):
     """
     DESCRIPTION: Performs slice time correction on fMRI data (assuming not a multiband sequence)
     PARAMETERS: 
         conf - a subjectConfig file
         logname - subject's log output filename
     """
+    logname = conf.logname
     os.chdir(conf.subjfMRIDir)
     numRuns = len(conf.epi_series)
 
@@ -135,7 +138,8 @@ def sliceTimeCorrection(conf, logname):
     return conf
 
 
-def concatenateRuns(conf, logname):
+def concatenateRuns(conf):
+    logname = conf.logname
     os.chdir(conf.subjfMRIDir)
     runList = ' '
     concatString = '1D:'
@@ -171,7 +175,8 @@ def concatenateRuns(conf, logname):
 
 
 
-def talairachAlignment(conf,logname):
+def talairachAlignment(conf):
+    logname = conf.logname
     os.chdir(conf.subjfMRIDir)
 
 
@@ -210,7 +215,8 @@ def talairachAlignment(conf,logname):
 
 
 
-def checkMotionParams(conf,logname):
+def checkMotionParams(conf):
+    logname = conf.logname
     os.chdir(conf.subjfMRIDir)
 
     # Plotting motion parameters
@@ -225,12 +231,13 @@ def checkMotionParams(conf,logname):
 
 
 
-def timeSeriesExtraction(conf, logname):
+def timeSeriesExtraction(conf):
+    logname = conf.logname
     os.chdir(conf.subjfMRIDir)
 
     print '--Extract time series from white matter, ventricle masks--'
-    run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_wmMask_func_eroded.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.subjID + '_WM_timeseries_rest.1D',logname)
-    run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_ventricles_func_eroded.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.subjID + '_ventricles_timeseries_rest.1D',logname)
+    run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_wmMask_func_eroded.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.subjID + '_WM_timeseries.1D',logname)
+    run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_ventricles_func_eroded.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.subjID + '_ventricles_timeseries.1D',logname)
 
 
     print '--Extract whole brain signal--'        
@@ -249,20 +256,21 @@ def timeSeriesExtraction(conf, logname):
     run_shell_cmd("3dLocalstat -overwrite -nbhd 'SPHERE(-1)' -stat 'max' -prefix " + conf.subjID + '_wholebrainmask_func_dil1vox.nii.gz ' + conf.subjID + '_wholebrainmask_func.nii.gz',logname)
 
     os.chdir(conf.subjfMRIDir)
-    run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_wholebrainmask_func_dil1vox.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.subjID + '_wholebrainsignal_timeseries_rest.1D',logname)
+    run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_wholebrainmask_func_dil1vox.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.subjID + '_wholebrainsignal_timeseries.1D',logname)
 
     # No updates in this block to conf
     return conf
 
 
-def runGLM(conf,logname):
+def runGLM(conf):
+    logname = conf.logname
     os.chdir(conf.subjfMRIDir)
 
-    run_shell_cmd('cp Movement_Regressors_Rest_allruns.1D rest_allruns_motion_params.1D', logname)
+    run_shell_cmd('cp Movement_Regressors_Rest_allruns.1D allruns_motion_params.1D', logname)
 
-    run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.subjID + '_WM_timeseries_rest.1D -derivative -write ' + conf.subjID + '_WM_timeseries_deriv_rest.1D', logname)
-    run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.subjID + '_ventricles_timeseries_rest.1D -derivative -write ' + conf.subjID + '_ventricles_timeseries_deriv_rest.1D', logname)
-    run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.subjID + '_wholebrainsignal_timeseries_rest.1D -derivative -write ' + conf.subjID + '_wholebrainsignal_timeseries_deriv_rest.1D', logname)
+    run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.subjID + '_WM_timeseries.1D -derivative -write ' + conf.subjID + '_WM_timeseries_deriv.1D', logname)
+    run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.subjID + '_ventricles_timeseries.1D -derivative -write ' + conf.subjID + '_ventricles_timeseries_deriv.1D', logname)
+    run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.subjID + '_wholebrainsignal_timeseries.1D -derivative -write ' + conf.subjID + '_wholebrainsignal_timeseries_deriv.1D', logname)
 
     print 'Run GLM to remove nuisance time series (motion, white matter, ventricles)'
     input = '-input ' + conf.nextInputFilename[-1] + '.nii.gz '
@@ -271,24 +279,24 @@ def runGLM(conf,logname):
     concat = ''
     polort = '-polort 1 '
     num_stimts = '-num_stimts 12 '
-    stimfile1 = '-stim_file 1 ' + conf.subjID + '_WM_timeseries_rest.1D -stim_label 1 WM '
-    stimfile2 = '-stim_file 2 ' + conf.subjID + '_ventricles_timeseries_rest.1D -stim_label 2 Vent '
-    stimfile3 = '-stim_file 3 ' + conf.subjID + '_WM_timeseries_deriv_rest.1D -stim_label 3 WMDeriv '
-    stimfile4 = '-stim_file 4 ' + conf.subjID + '_ventricles_timeseries_deriv_rest.1D -stim_label 4 VentDeriv '
-    stimfile5 = "-stim_file 5 rest_allruns_motion_params.1D'[0]' -stim_base 5 "
-    stimfile6 = "-stim_file 6 rest_allruns_motion_params.1D'[1]' -stim_base 6 "
-    stimfile7 = "-stim_file 7 rest_allruns_motion_params.1D'[2]' -stim_base 7 "
-    stimfile8 = "-stim_file 8 rest_allruns_motion_params.1D'[3]' -stim_base 8 "
-    stimfile9 = "-stim_file 9 rest_allruns_motion_params.1D'[4]' -stim_base 9 "
-    stimfile10 = "-stim_file 10 rest_allruns_motion_params.1D'[5]' -stim_base 10 "
+    stimfile1 = '-stim_file 1 ' + conf.subjID + '_WM_timeseries.1D -stim_label 1 WM '
+    stimfile2 = '-stim_file 2 ' + conf.subjID + '_ventricles_timeseries.1D -stim_label 2 Vent '
+    stimfile3 = '-stim_file 3 ' + conf.subjID + '_WM_timeseries_deriv.1D -stim_label 3 WMDeriv '
+    stimfile4 = '-stim_file 4 ' + conf.subjID + '_ventricles_timeseries_deriv.1D -stim_label 4 VentDeriv '
+    stimfile5 = "-stim_file 5 allruns_motion_params.1D'[0]' -stim_base 5 "
+    stimfile6 = "-stim_file 6 allruns_motion_params.1D'[1]' -stim_base 6 "
+    stimfile7 = "-stim_file 7 allruns_motion_params.1D'[2]' -stim_base 7 "
+    stimfile8 = "-stim_file 8 allruns_motion_params.1D'[3]' -stim_base 8 "
+    stimfile9 = "-stim_file 9 allruns_motion_params.1D'[4]' -stim_base 9 "
+    stimfile10 = "-stim_file 10 allruns_motion_params.1D'[5]' -stim_base 10 "
     # stimfile11 = "-stim_file 11 rest_allruns_motion_params.1D'[6]' -stim_base 11 "
     # stimfile12 = "-stim_file 12 rest_allruns_motion_params.1D'[7]' -stim_base 12 "
     # stimfile13 = "-stim_file 13 rest_allruns_motion_params.1D'[8]' -stim_base 13 "
     # stimfile14 = "-stim_file 14 rest_allruns_motion_params.1D'[9]' -stim_base 14 "
     # stimfile15 = "-stim_file 15 rest_allruns_motion_params.1D'[10]' -stim_base 15 "
     # stimfile16 = "-stim_file 16 rest_allruns_motion_params.1D'[11]' -stim_base 16 "
-    stimfile11 = "-stim_file 11 " + conf.subjID + '_wholebrainsignal_timeseries_rest.1D -stim_label 11 WholeBrain '
-    stimfile12 = "-stim_file 12 " + conf.subjID + '_wholebrainsignal_timeseries_deriv_rest.1D -stim_label 12 WholeBrainDeriv '
+    stimfile11 = "-stim_file 11 " + conf.subjID + '_wholebrainsignal_timeseries.1D -stim_label 11 WholeBrain '
+    stimfile12 = "-stim_file 12 " + conf.subjID + '_wholebrainsignal_timeseries_deriv.1D -stim_label 12 WholeBrainDeriv '
     xsave = '-xsave -x1D xmat_rall.x1D -xjpeg xmat_rall.jpg -errts NuissanceResid_Resids '
     jobs = '-jobs 1 -float -noFDR '
     bucket = '-bucket NuissanceResid_outbucket_' + conf.nextInputFilename[-1] + '+tlrc -overwrite' 
@@ -306,13 +314,13 @@ def runGLM(conf,logname):
     return conf
 
 
-def spatialSmoothing(conf, logname):
-
+def spatialSmoothing(conf):
+    logname = conf.logname
     os.chdir(conf.subjfMRIDir)
 
     print '-Spatially smooth data-'
 
-    run_shell_cmd('3dBlurInMask -input ' + conf.nextInputFilename[-1] + '+tlrc -FWHM ' + conf.FWHMSmoothing + ' -mask ' + conf.subjMaskDir + conf.subjID + '_gmMask_func_dil1vox.nii.gz -prefix smInMask_' + conf.nextInputFilename[-1] + '.nii.gz', logname)
+    run_shell_cmd('3dBlurInMask -input ' + conf.nextInputFilename[-1] + '+tlrc -FWHM ' + str(conf.FWHMSmoothing) + ' -mask ' + conf.subjMaskDir + conf.subjID + '_gmMask_func_dil1vox.nii.gz -prefix smInMask_' + conf.nextInputFilename[-1] + '.nii.gz', logname)
 
     conf.nextInputFilename.append('smInMask_' + conf.nextInputFilename[-1])
 
