@@ -182,8 +182,8 @@ def talairachAlignment(conf):
 
     #### Talairach transform anatomical image
     print '-Run @auto_tlrc to talairach transform anatomical T1 image-'
-    run_shell_cmd('@auto_tlrc -base ' + conf.atlasDir + '/MNI_avg152T1+tlrc -input anat_mprage_skullstripped+orig -no_ss',logname)
-    run_shell_cmd('ln -s ' + conf.atlasDir + '/MNI_avg152T1+tlrc* .',logname)
+    run_shell_cmd('@auto_tlrc -base ' + conf.atlasAnat + ' -input anat_mprage_skullstripped+orig -no_ss',logname)
+    run_shell_cmd('ln -s ' + conf.atlasAnat + ' .',logname)
     run_shell_cmd('3dcopy anat_mprage_skullstripped+tlrc anat_mprage_skullstripped_tlrc.nii.gz', logname) #format into NIFTI format
 
     # Create Mask
@@ -192,7 +192,7 @@ def talairachAlignment(conf):
     run_shell_cmd('ln -s anat_mprage_skullstripped_tlrc.nii.gz ' + conf.subjMaskDir,logname)
 
 
-    print '-Run align_epi_anat.py to align EPIs to MPRAGE, motion correct, and Talairach transform EPIs (output in 333 space)-'
+    print '-Run align_epi_anat.py to align EPIs to MPRAGE, motion correct, and Talairach transform EPIs (output in 222 space)-'
 
     print 'Make sure Python is version 2.6 or greater (ColeLabMac should be version 2.7)'
     run_shell_cmd('python -V',logname)
@@ -201,7 +201,7 @@ def talairachAlignment(conf):
     # [You could alternatively analyze all of the data, then Talairach transform the statistics (though this would make extraction of time series based on Talairached ROIs difficult)]
     # Visit for more info: http://afni.nimh.nih.gov/pub/dist/doc/program_help/align_epi_anat.py.html
 
-    run_shell_cmd('align_epi_anat.py -overwrite -anat anat_mprage_skullstripped+orig -epi ' + conf.nextInputFilename[-1] + '+orig -epi_base 10 -epi2anat -anat_has_skull no -AddEdge -epi_strip 3dSkullStrip -ex_mode quiet -volreg on -deoblique on -tshift off -tlrc_apar anat_mprage_skullstripped+tlrc -master_tlrc ' +  conf.atlasDir + '/MNI_EPI_333+tlrc',logname)
+    run_shell_cmd('align_epi_anat.py -overwrite -anat anat_mprage_skullstripped+orig -epi ' + conf.nextInputFilename[-1] + '+orig -epi_base 10 -epi2anat -anat_has_skull no -AddEdge -epi_strip 3dSkullStrip -ex_mode quiet -volreg on -deoblique on -tshift off -tlrc_apar anat_mprage_skullstripped+tlrc -master_tlrc ' +  conf.atlasEPI,logname)
 
     # Convert to NIFTI
     run_shell_cmd('3dcopy ' + conf.nextInputFilename[-1] + '_tlrc_al+tlrc ' + conf.nextInputFilename[-1] + '_tlrc_al.nii.gz',logname)
