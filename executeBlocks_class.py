@@ -48,8 +48,8 @@ class Pipeline():
         for block in self.blocks:
             block.run()
 
-
-
+3dresample = Block(conf, '3drresample -op')
+3dressample.run()
 # NOTE! Would need one more class one level more abstract than 'Pipeline' class, to handle parallel processing of all subjects.  this abstracted class would instantiate all subject pipelines (given the config file) and run them in parallel using multiprocessing package.
 
 # Example case:

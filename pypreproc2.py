@@ -39,20 +39,19 @@ for subj in conf.listOfSubjects:
 	subjCount += 1
 
 def pipeline(sconf):
-	# sconf = block.prepareMPRAGE(sconf)
-	# sconf = block.prepareEPI(sconf)
-	# # sconf = block.concatenateRuns(sconf, sconf.logname)
-	# sconf.nextInputFilename[-1] = 'epi_r1'
-	# sconf = block.talairachAlignment(sconf)
-	# sconf = block.checkMotionParams(sconf)
-	# sconf = maskbin.create_gmMask(sconf)
-	# sconf = maskbin.create_wmMask(sconf)
-	# sconf = maskbin.createVentricleMask(sconf)
-	# sconf = block.timeSeriesExtraction(sconf)
-	# sconf = block.runGLM(sconf)
-	# sconf = block.spatialSmoothing(sconf)
+	sconf = block.prepareMPRAGE(sconf)
+	sconf = block.prepareEPI(sconf)
+	# sconf = block.concatenateRuns(sconf, sconf.logname)
+	sconf.nextInputFilename[-1] = 'epi_r1'
+	sconf = block.talairachAlignment(sconf)
+	sconf = block.checkMotionParams(sconf)
+	sconf = maskbin.create_gmMask(sconf)
+	sconf = maskbin.create_wmMask(sconf)
+	sconf = maskbin.createVentricleMask(sconf)
+	sconf = block.timeSeriesExtraction(sconf)
+	sconf = block.runGLM(sconf)
+	sconf = block.spatialSmoothing(sconf)
 
-	sconf.nextInputFilename.append('test')
 	return sconf
 
 def runParallel(conf, sconfs):

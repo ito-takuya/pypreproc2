@@ -41,7 +41,7 @@ def prepareMPRAGE(conf):
     ####
     # Skull strip MPRAGE
     # Use Freesurfer's skullstripping (very slow, but more accurate)
-    if conf.runFreesurfer == True:
+    if conf.Nodes['runFreesurfer'] == True:
         run_shell_cmd('recon-all -subject ' + conf.subjID + ' -all -sd ' + conf.freesurferDir + ' -i mprage.nii.gz',logname)
 
 
@@ -243,7 +243,7 @@ def timeSeriesExtraction(conf):
     print '--Extract whole brain signal--'        
     os.chdir(conf.subjMaskDir)
 
-    if conf.hcpData == False: # no need to run @auto_tlrc on hcpdata
+    if conf.Nodes['hcpData'] == False: # no need to run @auto_tlrc on hcpdata
         # Transform aseg to TLRC space
         run_shell_cmd('@auto_tlrc -apar ' + conf.subjfMRIDir + 'anat_mprage_skullstripped_tlrc.nii.gz -input ' + conf.subjID + '_fs_seg.nii.gz',logname)
 
