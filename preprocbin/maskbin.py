@@ -17,7 +17,7 @@ def create_gmMask(conf):
 	subjMaskDir = conf.subjMaskDir
 	subjfMRIDir = conf.subjfMRIDir
 	freesurferDir = conf.freesurferDir
-	hcpdata = conf.Nodes['hcpData'] 
+	hcpdata = conf.hcpData
 	input = conf.fs_input
 	logname = conf.logname
 
@@ -92,7 +92,7 @@ def create_wmMask(conf):
 	subjMaskDir = conf.subjMaskDir
 	subjfMRIDir = conf.subjfMRIDir
 	freesurferDir = conf.freesurferDir
-	hcpdata = conf.Nodes['hcpData'] 
+	hcpdata = conf.hcpData 
 	input = conf.fs_input
 	logname = conf.logname
 
@@ -167,7 +167,7 @@ def createVentricleMask(conf):
 	subjMaskDir = conf.subjMaskDir
 	subjfMRIDir = conf.subjfMRIDir
 	freesurferDir = conf.freesurferDir
-	hcpdata = conf.Nodes['hcpData'] 
+	hcpdata = conf.hcpData
 	input = conf.fs_input
 
 	os.chdir(subjMaskDir)

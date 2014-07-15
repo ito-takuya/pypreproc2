@@ -7,19 +7,30 @@ import os
 
 # util functions:
 
-# Ensure directory exists    
+
+
+
+
 def ensureDir(f):
-    d = os.path.dirname(f)
-    if not os.path.exists(d):
-        os.makedirs(d)
+	"""
+	Ensure directory exists. This is a helper function to 'ensureSubjDirsExist'    
+	"""
+	d = os.path.dirname(f)
+	if not os.path.exists(d):
+	    os.makedirs(d)
 
 
 def ensureSubjDirsExist(conf):
+	"""
+	This function ensures that subject directories are created, if they don't exist
+	"""
 	ensureDir(conf.subjDir)
 	ensureDir(conf.subjfMRIDir)
 	ensureDir(conf.subjMaskDir)
 	ensureDir(conf.subjAnalysisDir)
 	ensureDir(conf.freesurferDir)
+
+
 
 def createLogFile(conf):
 	"""
@@ -82,3 +93,31 @@ def createLogFile(conf):
 		conf.logname = logname # update conf object
 		
 	return conf
+
+
+### OUTDATED AS OF 07/15/2014
+# def updateYAML(conf, sconfs, configfile):
+# 	"""
+# 	This is kind of an ugly hack to have nextInputFilename updated... not ideal. 
+# 	"""
+# 	print 'updating yaml file...'
+# 	conf.nextInputFilename = sconfs[0].nextInputFilename
+
+# 	# Deleting old YAML, creating a new (temporary) one with updated parameters (just nextInputFilename)
+# 	# create temporary file
+# 	fh, abs_path = mkstemp()
+# 	newyaml = open(abs_path, 'w')
+# 	oldyaml = open(configfile)
+# 	for line in oldyaml:
+# 		if line.startswith('nextInputFilename'):
+# 			newyaml.write('nextInputFilename : ' + str(conf.nextInputFilename) + '\n')
+# 		else: 
+# 			newyaml.write(line)
+# 	# close temp file
+# 	newyaml.close()
+# 	close(fh)
+# 	oldyaml.close()
+# 	# remove original yaml file
+# 	remove(configfile)
+# 	# rename temp file to original yaml file's name
+# 	move(abs_path, configfile)

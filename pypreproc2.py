@@ -9,85 +9,112 @@
 
 import sys
 sys.path.append('preprocbin')
-from workflows import *
 from run_shell_cmd import run_shell_cmd
 import os
 import glob
 import maskbin
 import config
 import utils
-import executeBlocks as block
+import preprocNodes as ppnodes
 from multiprocessing import Pool
 from tempfile import mkstemp
 from shutil import move
 from os import remove, close
 
-configfile = '/projects/IndivRITL/docs/scripts/pypreproc/test.yaml'
-
-# configfile = raw_input('Give the full path of your configuration file (with a .yaml extension): ')
-
-# Creates new conf file
-conf = config.Config(configfile)
 
 # Creating a list of subject config files (an iterable to be input)
-sconfs = [] 
-subjCount = 0
-for subj in conf.listOfSubjects:
-	sconfs.append(config.SubjConfig(conf,subj))
-	utils.ensureSubjDirsExist(sconfs[subjCount])
-	utils.createLogFile(sconfs[subjCount])
-	subjCount += 1
-
-def pipeline(sconf):
-	sconf = block.prepareMPRAGE(sconf)
-	sconf = block.prepareEPI(sconf)
-	# sconf = block.concatenateRuns(sconf, sconf.logname)
-	sconf.nextInputFilename[-1] = 'epi_r1'
-	sconf = block.talairachAlignment(sconf)
-	sconf = block.checkMotionParams(sconf)
-	sconf = maskbin.create_gmMask(sconf)
-	sconf = maskbin.create_wmMask(sconf)
-	sconf = maskbin.createVentricleMask(sconf)
-	sconf = block.timeSeriesExtraction(sconf)
-	sconf = block.runGLM(sconf)
-	sconf = block.spatialSmoothing(sconf)
-
-	return sconf
-
-def runParallel(conf, sconfs):
-	pool = Pool(processes=conf.nproc)
-	sconfs = pool.map_async(pipeline, sconfs).get(9999999)
+def createSubjConfs(conf):
+	"""
+	DESCRIPTION: Takes the config object constructed from the YAML file, and creates an array of subject config objects to be returned
+	PARAMETERS:
+		conf - the config object (parsed from the YAML file) 
+	"""
+	sconfs = [] 
+	subjCount = 0
+	for subj in conf.listOfSubjects:
+		sconfs.append(config.SubjConfig(conf,subj))
+		utils.ensureSubjDirsExist(sconfs[subjCount])
+		utils.createLogFile(sconfs[subjCount])
+		subjCount += 1
 	return sconfs
 
-def updateYAML(conf, sconfs, configfile):
-	# This is kind of an ugly hack to have nextInputFilename updated... not ideal. 
-	print 'updating yaml file...'
-	conf.nextInputFilename = sconfs[0].nextInputFilename
+class Pipeline():
+	"""
+	DESCRIPTION: PyPreproc2 Pipeline object for single subjects
+	PARAMETERS:
+		sconf - array of all subject config objects.
+	"""
 
-	# Deleting old YAML, creating a new (temporary) one with updated parameters (just nextInputFilename)
-	# create temporary file
-	fh, abs_path = mkstemp()
-	newyaml = open(abs_path, 'w')
-	oldyaml = open(configfile)
-	for line in oldyaml:
-		if line.startswith('nextInputFilename'):
-			newyaml.write('nextInputFilename : ' + str(conf.nextInputFilename) + '\n')
-		else: 
-			newyaml.write(line)
-	# close temp file
-	newyaml.close()
-	close(fh)
-	oldyaml.close()
-	# remove original yaml file
-	remove(configfile)
-	# rename temp file to original yaml file's name
-	move(abs_path, configfile)
+	def __init__(self,sconf):
+		# sconf is a single subject's config object
+		self.sconf = sconf
+
+		# Just get out the first subject's nodes, since they sould be the same for all nodes.
+		# self.nodes is a key:value pairing for numbering of nodes and nodes to execute
+		self.nodes = sconfs.Nodes 
+
+	def run(self):
+		# Run the pipeline given the order
+
+		# make sconf a local variable
+		sconf = self.sconf
+
+		for node in range(len(self.nodes)):
+			# Get constructor for particular node
+			callNode = getattr(ppnodes, self.nodes[node])
+			# Instantiate object using callNode()
+			nodeObject = callNode(sconf)
+			# Now, run only nodes indicated in 'runNodes'
+			if node in self.sconf.runNodes:
+				node.run()
+
+			# Keep track of sconfs in pipeline, regardless of whether or not a node was run.
+			sconf = nodeObject.conf.nextInputFilename
+
+		return sconf
+
+def runPipeline(sconf):
+	"""
+	Helper method to run the pipeline, so can be funneled in to multiprocessing module
+	"""
+	pipe = Pipeline(sconf)
+	pipe.run()
+
+def runParallel(conf):
+	"""
+	Helper function to run processes in parallel, given nproc parameter in the YAML file
+	"""
+	sconfs = createSubjConfs(conf)
+	pool = Pool(processes=conf.nproc)
+	sconfs = pool.map_async(runPipeline, sconfs).get(9999999)
+	return sconfs
+
+
+###################
+"""
+MAIN METHOD: method will the below commands as an executable
+"""
+def main(): 
+
+	defaultConfig = '/projects/IndivRITL/docs/scripts/pypreproc/pilotPreproc.yaml'
+	# Ask for input path
+	configfile = raw_input('Give the full path of your configuration file (with a .yaml extension).  [Default: ' + defaultConfig + ']: ')
+	# Set default, if nothing is given
+	configfile = '/projects/IndivRITL/docs/scripts/pypreproc/pilotPreproc.yaml' if configfile == '' else configfile
+
+
+	# Creates new conf file
+	conf = config.Config(configfile)
+
+	runParallel(conf)
+
+
+	
+if __name__ == "__main__":
+	main()
+
 
 
 # sconfs = runParallel(conf,sconfs)
 # updateYAML(conf, sconfs, configfile)
-
-
-
-
 

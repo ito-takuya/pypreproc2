@@ -1,6 +1,6 @@
 # Taku Ito
 # 05/30/2014
-# Creates config file to get correct inputs for execution blocks
+# Creates config file to get correct inputs for execution nodes
 
 import os
 import yaml

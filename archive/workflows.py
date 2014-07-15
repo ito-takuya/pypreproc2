@@ -31,7 +31,7 @@ class Command():
         run_shell_cmd(self.input, self.logname, cwd=self.pwd)
 
 
-class ExecuteBlock():
+class Node():
     def __init__(self, commands = [], comments = []):
         self.commands = commands
         # self.name = name #name of the execute block (e.g., Preparing MPRAGES)
