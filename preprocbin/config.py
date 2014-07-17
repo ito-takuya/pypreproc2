@@ -42,6 +42,9 @@ class Config():
 				setattr(self, key, parameters[key])
 				if key == 'epi_series':
 					self.numRuns = len(parameters[key])
+
+			# Handle this variable instantiation internally
+			self.nextInputFilename = ['']
 					
 
 	# Anything below this comment (within this Config class) is still in development.  Eventually I would lie to reach the point where we can set all the parameters through a prompt from the console, but this is of lower priority.

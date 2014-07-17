@@ -22,22 +22,6 @@ from shutil import move
 from os import remove, close
 
 
-# Creating a list of subject config files (an iterable to be input)
-def createSubjConfs(conf):
-	"""
-	DESCRIPTION: Takes the config object constructed from the YAML file, and creates an array of subject config objects to be returned
-	PARAMETERS:
-		conf - the config object (parsed from the YAML file) 
-	"""
-	sconfs = [] 
-	subjCount = 0
-	for subj in conf.listOfSubjects:
-		sconfs.append(config.SubjConfig(conf,subj))
-		utils.ensureSubjDirsExist(sconfs[subjCount])
-		utils.createLogFile(sconfs[subjCount])
-		subjCount += 1
-	return sconfs
-
 class Pipeline():
 	"""
 	DESCRIPTION: PyPreproc2 Pipeline object for single subjects
@@ -51,7 +35,7 @@ class Pipeline():
 
 		# Just get out the first subject's nodes, since they sould be the same for all nodes.
 		# self.nodes is a key:value pairing for numbering of nodes and nodes to execute
-		self.nodes = sconfs.Nodes 
+		self.nodes = sconf.Nodes 
 
 	def run(self):
 		# Run the pipeline given the order
@@ -59,19 +43,36 @@ class Pipeline():
 		# make sconf a local variable
 		sconf = self.sconf
 
-		for node in range(len(self.nodes)):
+		for nodeNum in self.nodes:
 			# Get constructor for particular node
-			callNode = getattr(ppnodes, self.nodes[node])
-			# Instantiate object using callNode()
-			nodeObject = callNode(sconf)
+			print 'Constructing node for', self.nodes[nodeNum], '...'
+			# Make sure the class being instantiated is looking in the correct module
+			if isinstance(self.nodes[nodeNum], str):
+				if hasattr(ppnodes, self.nodes[nodeNum]):
+					callNode = getattr(ppnodes, self.nodes[nodeNum])
+					# Instantiate object using callNode()
+					nodeObject = callNode(sconf)
+				elif hasattr(maskbin, self.nodes[nodeNum]):
+					callNode = getattr(maskbin, self.nodes[nodeNum])
+					# Instantiate object using callNode()
+					nodeObject = callNode(sconf)
+			elif isinstance(self.nodes[nodeNum],dict):
+				print "Reading in a custom command... Make sure you know what you're doing!"
+				# Constructing custom command and instantiating it
+				nodeObject = ppnodes.CustomCmd(self.nodes[nodeNum],sconf)
+			else:
+				raise Exception('Cant find the node', self.nodes[nodeNum], 'in any of the available modules. Please make sure you typed the correct node name.')
+
 			# Now, run only nodes indicated in 'runNodes'
-			if node in self.sconf.runNodes:
-				node.run()
+			if nodeNum in self.sconf.runNodes:
+				nodeObject.run()
 
 			# Keep track of sconfs in pipeline, regardless of whether or not a node was run.
-			sconf = nodeObject.conf.nextInputFilename
+			print 'Updating config object...'
+			sconf = nodeObject.conf
 
 		return sconf
+
 
 def runPipeline(sconf):
 	"""
@@ -84,7 +85,7 @@ def runParallel(conf):
 	"""
 	Helper function to run processes in parallel, given nproc parameter in the YAML file
 	"""
-	sconfs = createSubjConfs(conf)
+	sconfs = utils.createSubjConfs(conf)
 	pool = Pool(processes=conf.nproc)
 	sconfs = pool.map_async(runPipeline, sconfs).get(9999999)
 	return sconfs
@@ -103,9 +104,9 @@ def main():
 	configfile = '/projects/IndivRITL/docs/scripts/pypreproc/pilotPreproc.yaml' if configfile == '' else configfile
 
 
-	# Creates new conf file
-	conf = config.Config(configfile)
+	# Creates new config object
 
+	conf = config.Config(configfile)
 	runParallel(conf)
 
 

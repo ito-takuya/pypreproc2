@@ -4,11 +4,27 @@
 # 07/03/2014
 
 import os
-
+import config
+import utils
 # util functions:
 
 
+# Creating a list of subject config files (an iterable to be input)
+def createSubjConfs(conf):
+	"""
+	DESCRIPTION: Takes the config object constructed from the YAML file, and creates an array of subject config objects to be returned
+	PARAMETERS:
+		conf - the config object (parsed from the YAML file) 
+	"""
+	sconfs = [] 
+	subjCount = 0
+	for subj in conf.listOfSubjects:
+		sconfs.append(config.SubjConfig(conf,subj))
+		utils.ensureSubjDirsExist(sconfs[subjCount])
+		utils.createLogFile(sconfs[subjCount])
+		subjCount += 1
 
+	return sconfs
 
 
 def ensureDir(f):

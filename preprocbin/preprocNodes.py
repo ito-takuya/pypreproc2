@@ -20,7 +20,10 @@ class prepareMPRAGE():
     def __init__(self, conf):
         self.conf = conf
 
-    def run(self, conf):    
+    def run(self):    
+        #make local variable
+        conf = self.conf
+
         logname = conf.logname
         os.chdir(conf.subjfMRIDir) #change working directory to fMRI directory
             
@@ -74,7 +77,10 @@ class prepareEPI():
         self.conf = conf
         self.conf.nextInputFilename.append('epi')
 
-    def run(self, conf):
+    def run(self):
+        #make local variable
+        conf = self.conf
+
         logname = conf.logname
         os.chdir(conf.subjfMRIDir)
 
@@ -118,7 +124,7 @@ class prepareEPI():
 
 
     # 3rd Execute Block - Slice Time Correction
-def sliceTimeCorrection(conf):
+class sliceTimeCorrection():
     """
     DESCRIPTION: Performs slice time correction on fMRI data (assuming not a multiband sequence)
     PARAMETERS: 
@@ -130,7 +136,9 @@ def sliceTimeCorrection(conf):
         self.conf = conf
         self.conf.nextInputFilename.append('stc_' + conf.nextInputFilename[-1])
 
-    def run(self,conf):
+    def run(self):
+        #make local variable
+        conf = self.conf
 
         logname = conf.logname
         os.chdir(conf.subjfMRIDir)
@@ -140,7 +148,7 @@ def sliceTimeCorrection(conf):
 
             print ' - Slice Time Correction for Run', runNum, '-'
             
-            run_shell_cmd('3dTshift -overwrite -Fourier -TR ' + conf.TR + ' -tpattern ' + conf.tpattern + ' -prefix stc_' + conf.nextInputFilename[-1] + '_r' + str(runNum) + ' ' + conf.nextInputFilename[-1] + '_r' + str(runNum) + '+orig', logname)
+            run_shell_cmd('3dTshift -overwrite -Fourier -TR ' + conf.TR + ' -tpattern ' + conf.tpattern + ' -prefix ' + conf.nextInputFilename[-1] + '_r' + str(runNum) + ' ' + conf.nextInputFilename[-2] + '_r' + str(runNum) + '+orig', logname)
             
             rmFileName = glob.glob(conf.nextInputFilename[-1] + '_r' + str(runNum) + '????.????.gz')
             if rmFileName:
@@ -156,9 +164,12 @@ class concatenateRuns():
         # Update conf with new attributes/parameters
 
         # Construct Run List, even if this node isn't run
+        runList = ' '
+        concatString = '1D:'
+        TRCount = 0
         numRuns = len(conf.epi_series)
         for runNum in range(1, numRuns+1):
-            runList = runList + ' ' + conf.subjfMRIDir + conf.nextInputFilename[-1] + '_r' + str(runNum) + '+orig'
+            runList = runList + ' ' + conf.subjfMRIDir + conf.nextInputFilename[-2] + '_r' + str(runNum) + '+orig'
             concatString = concatString + ' ' + str(TRCount)
             TRCount = TRCount + conf.numTRs  ###EDIT THIS!!!
 
@@ -166,7 +177,10 @@ class concatenateRuns():
         self.conf.concatString = concatString
 
 
-    def run(self, conf):
+    def run(self):
+        #make local variable
+        conf = self.conf
+
         logname = conf.logname
         os.chdir(conf.subjfMRIDir)
         runList = ' '
@@ -175,19 +189,13 @@ class concatenateRuns():
 
         numRuns = len(conf.epi_series)
 
-        # Construct Run List
-        for runNum in range(1, numRuns+1):
-            runList = runList + ' ' + conf.subjfMRIDir + conf.nextInputFilename[-1] + '_r' + str(runNum) + '+orig'
-            concatString = concatString + ' ' + str(TRCount)
-            TRCount = TRCount + conf.numTRs  ###EDIT THIS!!!
-
         print '- Concatenating Runs -'
         print 'Run list:', runList
         print 'Concatenation string (onset times of each run):', concatString
 
         # Run command
-        run_shell_cmd('rm -v ' + conf.nextInputFilename[-1] + '_allruns+orig*',logname)
-        run_shell_cmd('3dTcat -prefix ' + conf.nextInputFilename[-1] + '_allruns ' + runList,logname)
+        run_shell_cmd('rm -v ' + conf.nextInputFilename[-1] + '+orig*',logname)
+        run_shell_cmd('3dTcat -prefix ' + conf.nextInputFilename[-1] + ' ' + runList,logname)
 
         # Remove intermediate analysis file to save disk space
         rm_file = glob.glob(conf.nextInputFilename[-1] + 'r_*+????.????.gz')
@@ -203,8 +211,21 @@ class talairachAlignment():
     def __init__(self, conf):
         self.conf = conf
         self.conf.nextInputFilename.append(conf.nextInputFilename[-1] + '_tlrc_al')
+        
 
-    def run(self, conf):    
+    def run(self):
+        # Added if statement to see if we need to process runs separately
+        if self.conf.runEPIsSeparate == True:
+            for runNum in range(1,len(self.conf.epi_series)+1):
+                self.conf.nextInputFilename[-1] = self.conf.nextInputFilename[-1] + '_r' + str(runNum)
+                self.runHelp(conf)
+        else:
+            self.runHelp()
+
+    def runHelp(self):    
+        #make local variable
+        conf = self.conf
+
         logname = conf.logname
         os.chdir(conf.subjfMRIDir)
 
@@ -230,10 +251,10 @@ class talairachAlignment():
         # [You could alternatively analyze all of the data, then Talairach transform the statistics (though this would make extraction of time series based on Talairached ROIs difficult)]
         # Visit for more info: http://afni.nimh.nih.gov/pub/dist/doc/program_help/align_epi_anat.py.html
 
-        run_shell_cmd('align_epi_anat.py -overwrite -anat anat_mprage_skullstripped+orig -epi ' + conf.nextInputFilename[-1] + '+orig -epi_base 10 -epi2anat -anat_has_skull no -AddEdge -epi_strip 3dSkullStrip -ex_mode quiet -volreg on -deoblique on -tshift off -tlrc_apar anat_mprage_skullstripped+tlrc -master_tlrc ' +  conf.atlasEPI,logname)
+        run_shell_cmd('align_epi_anat.py -overwrite -anat anat_mprage_skullstripped+orig -epi ' + conf.nextInputFilename[-2] + '+orig -epi_base 10 -epi2anat -anat_has_skull no -AddEdge -epi_strip 3dSkullStrip -ex_mode quiet -volreg on -deoblique on -tshift off -tlrc_apar anat_mprage_skullstripped+tlrc -master_tlrc ' +  conf.atlasEPI,logname)
 
         # Convert to NIFTI
-        run_shell_cmd('3dcopy ' + conf.nextInputFilename[-1] + '_tlrc_al+tlrc ' + conf.nextInputFilename[-1] + '_tlrc_al.nii.gz',logname)
+        run_shell_cmd('3dcopy ' + conf.nextInputFilename[-1] + '+tlrc ' + conf.nextInputFilename[-1] + '.nii.gz',logname)
         run_shell_cmd('cp ' + conf.nextInputFilename[-1] + "_vr_motion.1D allruns_motion_params.1D",logname)
 
 
@@ -246,7 +267,19 @@ class checkMotionParams():
         self.conf = conf
         self.showPlot = showPlot
 
-    def run(self, conf):
+    def run(self):
+        # Added if statement to see if we need to process runs separately
+        if self.conf.runEPIsSeparate == True:
+            for runNum in range(1,len(self.conf.epi_series)+1):
+                self.conf.nextInputFilename[-1] = self.conf.nextInputFilename[-1].replace('epi', 'epi_r' + str(runNum))
+                self.runHelp(conf)
+        else:
+            self.runHelp()
+        
+    def runHelp(self):
+        #make local variable
+        conf = self.conf
+
         logname = conf.logname
         os.chdir(conf.subjfMRIDir)
 
@@ -267,7 +300,20 @@ class timeSeriesExtraction():
     def __init__(self, conf):
         self.conf = conf
 
-    def run(self, conf):
+    def run(self):
+        # Added if statement to see if we need to process runs separately
+        if self.conf.runEPIsSeparate == True:
+            for runNum in len(self.conf.epi_series):
+                # need to create separate output directories#? yes?
+                # outputDir = self.conf.subjfMRIDir + 'epi_r' + str(runNum)
+                self.conf.nextInputFilename[-1] = self.conf.nextInputFilename[-1].replace('epi', 'epi_r' + str(runNum))
+                self.runHelp()
+        else:
+            self.runHelp()
+
+    def runHelp(self):
+        #make local variable
+        conf = self.conf
 
         logname = conf.logname
         os.chdir(conf.subjfMRIDir)
@@ -299,11 +345,14 @@ class timeSeriesExtraction():
 
 class runGLM():
 
-    def __init(self, conf):
+    def __init__(self, conf):
         self.conf = conf
         self.conf.nextInputFilename.append('NuissanceResid_' + conf.nextInputFilename[-1])
 
-    def run(self, conf):    
+    def run(self):    
+
+        #make local variable
+        conf = self.conf
 
         logname = conf.logname
         os.chdir(conf.subjfMRIDir)
@@ -315,7 +364,7 @@ class runGLM():
         run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.subjID + '_wholebrainsignal_timeseries.1D -derivative -write ' + conf.subjID + '_wholebrainsignal_timeseries_deriv.1D', logname)
 
         print 'Run GLM to remove nuisance time series (motion, white matter, ventricles)'
-        input = '-input ' + conf.nextInputFilename[-1] + '.nii.gz '
+        input = '-input ' + conf.nextInputFilename[-2] + '.nii.gz '
         mask = '-mask ' + conf.subjMaskDir + conf.subjID + '_gmMask_func_dil1vox.nii.gz '
         # concat = '-concat ' + '"' + conf.concatString + '" '
         concat = ''
@@ -341,14 +390,14 @@ class runGLM():
         stimfile12 = "-stim_file 12 " + conf.subjID + '_wholebrainsignal_timeseries_deriv.1D -stim_label 12 WholeBrainDeriv '
         xsave = '-xsave -x1D xmat_rall.x1D -xjpeg xmat_rall.jpg -errts NuissanceResid_Resids '
         jobs = '-jobs 1 -float -noFDR '
-        bucket = '-bucket NuissanceResid_outbucket_' + conf.nextInputFilename[-1] + '+tlrc -overwrite' 
+        bucket = '-bucket NuissanceResid_outbucket_' + conf.nextInputFilename[-2] + '+tlrc -overwrite' 
 
         glm_command = '3dDeconvolve ' + input + mask + concat + polort + num_stimts + stimfile1 + stimfile2 + stimfile3 + stimfile4 + stimfile5 + stimfile6 + stimfile7 + stimfile8 + stimfile9 + stimfile10 + stimfile11 + stimfile12 + xsave + jobs + bucket
 
         run_shell_cmd(glm_command, logname)
 
-        run_shell_cmd('rm NuissanceResid_' + conf.nextInputFilename[-1] + '*', logname)
-        run_shell_cmd('3dcopy NuissanceResid_Resids+tlrc NuissanceResid_' + conf.nextInputFilename[-1] + '+tlrc', logname)
+        run_shell_cmd('rm ' + conf.nextInputFilename[-1] + '*', logname)
+        run_shell_cmd('3dcopy NuissanceResid_Resids+tlrc ' + conf.nextInputFilename[-1] + '+tlrc', logname)
         run_shell_cmd('rm NuissanceResid_Resids+tlrc', logname)
 
 
@@ -359,13 +408,46 @@ class spatialSmoothing():
         self.conf = conf
         self.conf.nextInputFilename.append('smInMask_' + conf.nextInputFilename[-1])
 
-    def run(self, conf):
+    def run(self):
+        #make local variable
+        conf = self.conf
+
         logname = conf.logname
         os.chdir(conf.subjfMRIDir)
 
         print '-Spatially smooth data-'
 
-        run_shell_cmd('3dBlurInMask -input ' + conf.nextInputFilename[-1] + '+tlrc -FWHM ' + str(conf.FWHMSmoothing) + ' -mask ' + conf.subjMaskDir + conf.subjID + '_gmMask_func_dil1vox.nii.gz -prefix smInMask_' + conf.nextInputFilename[-1] + '.nii.gz', logname)
+        run_shell_cmd('3dBlurInMask -input ' + conf.nextInputFilename[-2] + '+tlrc -FWHM ' + str(conf.FWHMSmoothing) + ' -mask ' + conf.subjMaskDir + conf.subjID + '_gmMask_func_dil1vox.nii.gz -prefix ' + conf.nextInputFilename[-1] + '.nii.gz', logname)
+
+
+class CustomCmd():
+    """
+    DESCRIPTION: This is an object that wraps a custom command.
+    """
+
+    def __init__(self,cmd,sconf):
+        self.dict = cmd
+        self.conf = sconf
+        for key in self.dict:
+            # Make sure self.dict[key] is a string, since we'll be replacing those strings with key words (with '%' signs in front)
+            if isinstance(self.dict[key], str):
+                # Currently only searching and replacing the below parameters
+                self.dict[key] = self.dict[key].replace('%nextInputFilename',sconf.nextInputFilename[-1])
+                self.dict[key] = self.dict[key].replace('%s', sconf.subjID)
+                self.dict[key] = self.dict[key].replace('%input', self.dict['input'])
+                self.dict[key] = self.dict[key].replace('%output', self.dict['output'])
+        self.input = self.dict['input']
+        self.output = self.dict['output']
+        self.cmd = self.dict['cmd']
+        self.nextInput = self.dict['insertOutputAsNextInput']
+        
+        if self.nextInput == True:
+            self.conf.nextInputFilename.append(self.output)
+
+    def run(self):
+        run_shell_cmd(self.cmd, self.conf.logname)
+
+
 
     
 
