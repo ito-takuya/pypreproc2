@@ -304,12 +304,22 @@ class timeSeriesExtraction():
         # Added if statement to see if we need to process runs separately
         if self.conf.runEPIsSeparate == True:
             for runNum in len(self.conf.epi_series):
-                # need to create separate output directories#? yes?
-                # outputDir = self.conf.subjfMRIDir + 'epi_r' + str(runNum)
+                # Update epi run name so we can analyze EPI scans separately
                 self.conf.nextInputFilename[-1] = self.conf.nextInputFilename[-1].replace('epi', 'epi_r' + str(runNum))
+                # Create separate time series 1D files for each scan, since we're analyzing each run separately.
+                self.conf.wm_timeseries = self.conf.subjID + '_WM_timeseries_r' + str(runNum) 
+                self.conf.ventricles_timeseries = self.conf.subjID + '_ventricles_timeseries_r' + str(runNum) 
+                self.conf.wholebrain_timeseries = self.conf.subjID + '_wholebrainsignal_timeseries_r' + str(runNum) 
+                # run
                 self.runHelp()
         else:
+            # Instantiate appropriate timeseries output names.  If runs are concatenated, only need one timeseries files.
+            self.conf.wm_timeseries = self.conf.subjID + '_WM_timeseries'
+            self.conf.ventricles_timeseries = self.conf.subjID + '_ventricles_timeseries'
+            self.conf.wholebrain_timeseries = self.conf.subjID + '_wholebrainsignal_timeseries'
+            # run
             self.runHelp()
+
 
     def runHelp(self):
         #make local variable
@@ -319,8 +329,8 @@ class timeSeriesExtraction():
         os.chdir(conf.subjfMRIDir)
 
         print '--Extract time series from white matter, ventricle masks--'
-        run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_wmMask_func_eroded.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.subjID + '_WM_timeseries.1D',logname)
-        run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_ventricles_func_eroded.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.subjID + '_ventricles_timeseries.1D',logname)
+        run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_wmMask_func_eroded.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.wm_timeseries + '.1D',logname)
+        run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_ventricles_func_eroded.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.ventricles_timeseries + '.1D',logname)
 
 
         print '--Extract whole brain signal--'        
@@ -339,7 +349,7 @@ class timeSeriesExtraction():
         run_shell_cmd("3dLocalstat -overwrite -nbhd 'SPHERE(-1)' -stat 'max' -prefix " + conf.subjID + '_wholebrainmask_func_dil1vox.nii.gz ' + conf.subjID + '_wholebrainmask_func.nii.gz',logname)
 
         os.chdir(conf.subjfMRIDir)
-        run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_wholebrainmask_func_dil1vox.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.subjID + '_wholebrainsignal_timeseries.1D',logname)
+        run_shell_cmd('3dmaskave -quiet -mask ' + conf.subjMaskDir + conf.subjID + '_wholebrainmask_func_dil1vox.nii.gz ' + conf.nextInputFilename[-1] + '.nii.gz > ' + conf.wholebrain_timeseries + '.1D',logname)
 
 
 
@@ -347,9 +357,29 @@ class runGLM():
 
     def __init__(self, conf):
         self.conf = conf
-        self.conf.nextInputFilename.append('NuissanceResid_' + conf.nextInputFilename[-1])
 
-    def run(self):    
+    def run(self):
+        # Added if statement to see if we need to process runs separately
+        if self.conf.runEPIsSeparate == True:
+            for runNum in len(self.conf.epi_series):
+                # Update epi run name so we can analyze EPI scans separately
+                self.conf.nextInputFilename[-1] = self.conf.nextInputFilename[-1].replace('epi', 'epi_r' + str(runNum))
+                # Create separate time series 1D files for each scan, since we're analyzing each run separately.
+                # In the future, another alternative and cleaner way to deal with this is to not have to re-instantiate this in the conf file, and rather, just keep each run's version in a list so the code in preprocNodes can be re-used.
+                self.conf.wm_timeseries = self.conf.subjID + '_WM_timeseries_r' + str(runNum)
+                self.conf.ventricles_timeseries = self.conf.subjID + '_ventricles_timeseries_r' + str(runNum)
+                self.conf.wholebrain_timeseries = self.conf.subjID + '_wholebrainsignal_timeseries_r' + str(runNum)
+                # run
+                self.runHelp()
+        else:
+            # Instantiate appropriate timeseries output names.  If runs are concatenated, only need one timeseries files.
+            self.conf.wm_timeseries = self.conf.subjID + '_WM_timeseries'
+            self.conf.ventricles_timeseries = self.conf.subjID + '_ventricles_timeseries'
+            self.conf.wholebrain_timeseries = self.conf.subjID + '_wholebrainsignal_timeseries'
+            # run
+            self.runHelp()
+
+    def runHelp(self):    
 
         #make local variable
         conf = self.conf
@@ -359,9 +389,9 @@ class runGLM():
 
         run_shell_cmd('cp Movement_Regressors_Rest_allruns.1D allruns_motion_params.1D', logname)
 
-        run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.subjID + '_WM_timeseries.1D -derivative -write ' + conf.subjID + '_WM_timeseries_deriv.1D', logname)
-        run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.subjID + '_ventricles_timeseries.1D -derivative -write ' + conf.subjID + '_ventricles_timeseries_deriv.1D', logname)
-        run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.subjID + '_wholebrainsignal_timeseries.1D -derivative -write ' + conf.subjID + '_wholebrainsignal_timeseries_deriv.1D', logname)
+        run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.wm_timeseries + '.1D -derivative -write ' + conf.wm_timeseries + '_deriv.1D', logname)
+        run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.ventricles_timeseries + '.1D -derivative -write ' + conf.ventricles_timeseries + '_deriv.1D', logname)
+        run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.wholebrain_timeseries + '.1D -derivative -write ' + conf.wholebrain_timeseries + '_deriv.1D', logname)
 
         print 'Run GLM to remove nuisance time series (motion, white matter, ventricles)'
         input = '-input ' + conf.nextInputFilename[-2] + '.nii.gz '
@@ -370,24 +400,25 @@ class runGLM():
         concat = ''
         polort = '-polort 1 '
         num_stimts = '-num_stimts 12 '
-        stimfile1 = '-stim_file 1 ' + conf.subjID + '_WM_timeseries.1D -stim_label 1 WM '
-        stimfile2 = '-stim_file 2 ' + conf.subjID + '_ventricles_timeseries.1D -stim_label 2 Vent '
-        stimfile3 = '-stim_file 3 ' + conf.subjID + '_WM_timeseries_deriv.1D -stim_label 3 WMDeriv '
-        stimfile4 = '-stim_file 4 ' + conf.subjID + '_ventricles_timeseries_deriv.1D -stim_label 4 VentDeriv '
+        stimfile1 = '-stim_file 1 ' + conf.wm_timeseries + '.1D -stim_label 1 WM '
+        stimfile2 = '-stim_file 2 ' + conf.ventricles_timeseries + '.1D -stim_label 2 Vent '
+        stimfile3 = '-stim_file 3 ' + conf.wm_timeseries + '_deriv.1D -stim_label 3 WMDeriv '
+        stimfile4 = '-stim_file 4 ' + conf.ventricles_timeseries + '_deriv.1D -stim_label 4 VentDeriv '
         stimfile5 = "-stim_file 5 allruns_motion_params.1D'[0]' -stim_base 5 "
         stimfile6 = "-stim_file 6 allruns_motion_params.1D'[1]' -stim_base 6 "
         stimfile7 = "-stim_file 7 allruns_motion_params.1D'[2]' -stim_base 7 "
         stimfile8 = "-stim_file 8 allruns_motion_params.1D'[3]' -stim_base 8 "
         stimfile9 = "-stim_file 9 allruns_motion_params.1D'[4]' -stim_base 9 "
         stimfile10 = "-stim_file 10 allruns_motion_params.1D'[5]' -stim_base 10 "
+        # these stimfiles are commented out because this had to be adapted from analyzing the HCP rest data
         # stimfile11 = "-stim_file 11 rest_allruns_motion_params.1D'[6]' -stim_base 11 "
         # stimfile12 = "-stim_file 12 rest_allruns_motion_params.1D'[7]' -stim_base 12 "
         # stimfile13 = "-stim_file 13 rest_allruns_motion_params.1D'[8]' -stim_base 13 "
         # stimfile14 = "-stim_file 14 rest_allruns_motion_params.1D'[9]' -stim_base 14 "
         # stimfile15 = "-stim_file 15 rest_allruns_motion_params.1D'[10]' -stim_base 15 "
         # stimfile16 = "-stim_file 16 rest_allruns_motion_params.1D'[11]' -stim_base 16 "
-        stimfile11 = "-stim_file 11 " + conf.subjID + '_wholebrainsignal_timeseries.1D -stim_label 11 WholeBrain '
-        stimfile12 = "-stim_file 12 " + conf.subjID + '_wholebrainsignal_timeseries_deriv.1D -stim_label 12 WholeBrainDeriv '
+        stimfile11 = "-stim_file 11 " + conf.wholebrain_timeseries + '.1D -stim_label 11 WholeBrain '
+        stimfile12 = "-stim_file 12 " + conf.wholebrain_timeseries + '_deriv.1D -stim_label 12 WholeBrainDeriv '
         xsave = '-xsave -x1D xmat_rall.x1D -xjpeg xmat_rall.jpg -errts NuissanceResid_Resids '
         jobs = '-jobs 1 -float -noFDR '
         bucket = '-bucket NuissanceResid_outbucket_' + conf.nextInputFilename[-2] + '+tlrc -overwrite' 
