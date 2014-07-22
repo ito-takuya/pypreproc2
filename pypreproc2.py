@@ -1,4 +1,4 @@
-vnc#!/usr/bin/env python
+#!/usr/bin/env python
 
 # Taku Ito
 # 07/03/2014
@@ -64,6 +64,7 @@ class Pipeline():
 				raise Exception('Cant find the node', self.nodes[nodeNum], 'in any of the available modules. Please make sure you typed the correct node name.')
 
 			# Now, run only nodes indicated in 'runNodes'
+			print nodeObject.conf.nextInputFilename
 			if nodeNum in self.sconf.runNodes:
 				nodeObject.run()
 

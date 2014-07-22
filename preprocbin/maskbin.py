@@ -6,7 +6,7 @@
 import os
 from run_shell_cmd import *
 
-class createGMMask():
+class CreateGMMask():
 	"""
 	Creates a gmMask in subjMaskDir
 	"""
@@ -14,8 +14,9 @@ class createGMMask():
 		self.conf = conf
 		# No udpating of nextInputFilename
 
-	def run(self, conf):
+	def run(self):
 		# Parse out important parameters for this block
+		conf = self.conf
 		subj = conf.subjID 
 		nextInputFilename = conf.nextInputFilename[-1]
 		subjMaskDir = conf.subjMaskDir
@@ -84,15 +85,16 @@ class createGMMask():
 
 
 
-class createWMMask():
+class CreateWMMask():
 	"""
 	Creates a wmMask in subjMaskDir
 	"""
 	def __init__(self, conf):
 		self.conf = conf
 
-	def run(self, conf):
+	def run(self):
 		# Parse out important parameters for this block
+		conf = self.conf
 		subj = conf.subjID 
 		nextInputFilename = conf.nextInputFilename[-1]
 		subjMaskDir = conf.subjMaskDir
@@ -160,7 +162,7 @@ class createWMMask():
 
 
 
-class createVentricleMask():
+class CreateVentricleMask():
 	"""
 	Creates ventricle masks in subjMaskDir
 	"""
@@ -168,8 +170,9 @@ class createVentricleMask():
 	def __init__(self, conf):
 		self.conf = conf
 
-	def run(self, conf):	
+	def run(self):	
 		# Parse out important parameters for this block
+		conf = self.conf
 		logname = conf.logname
 		subj = conf.subjID 
 		nextInputFilename = conf.nextInputFilename[-1]

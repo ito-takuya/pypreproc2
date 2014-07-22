@@ -7,8 +7,9 @@ from run_shell_cmd import run_shell_cmd
 import os
 import glob
 import maskbin
+import re
 
-class prepareMPRAGE():
+class PrepareMPRAGE():
     """
     DESCRIPTION: Prepares and compiles anatomical MRPRAGE from raw DICOM files.  Not for HCP data use.  For use on a single subject.
     PARAMETERS: 
@@ -66,7 +67,7 @@ class prepareMPRAGE():
 
 
 
-class prepareEPI():
+class PrepareEPI():
     """
     DESCRIPTION: Converts fMRI data to AFNI format from raw DICOMs.
     PARAMETERS: 
@@ -75,7 +76,11 @@ class prepareEPI():
     """
     def __init__(self, conf):
         self.conf = conf
-        self.conf.nextInputFilename.append('epi')
+        if self.conf.runEPIsSeparate == True:
+            # This is essentially a hack to make it work for future nodes, if this Node is not run...
+            self.conf.nextInputFilename.append('epi_r1')
+        else:
+            self.conf.nextInputFilename.append('epi')
 
     def run(self):
         #make local variable
@@ -124,7 +129,7 @@ class prepareEPI():
 
 
     # 3rd Execute Block - Slice Time Correction
-class sliceTimeCorrection():
+class SliceTimeCorrection():
     """
     DESCRIPTION: Performs slice time correction on fMRI data (assuming not a multiband sequence)
     PARAMETERS: 
@@ -156,7 +161,7 @@ class sliceTimeCorrection():
 
 
 
-class concatenateRuns():
+class ConcatenateRuns():
 
     def __init__(self, conf):
         self.conf = conf
@@ -206,7 +211,7 @@ class concatenateRuns():
 
 
 
-class talairachAlignment():
+class TalairachAlignment():
 
     def __init__(self, conf):
         self.conf = conf
@@ -217,8 +222,9 @@ class talairachAlignment():
         # Added if statement to see if we need to process runs separately
         if self.conf.runEPIsSeparate == True:
             for runNum in range(1,len(self.conf.epi_series)+1):
-                self.conf.nextInputFilename[-1] = self.conf.nextInputFilename[-1] + '_r' + str(runNum)
-                self.runHelp(conf)
+                self.conf.nextInputFilename[-1] = re.sub('epi_r[0-9]', 'epi_r' + str(runNum),self.conf.nextInputFilename[-1])
+                self.conf.nextInputFilename[-2] = re.sub('epi_r[0-9]', 'epi_r' + str(runNum),self.conf.nextInputFilename[-2])
+                self.runHelp()
         else:
             self.runHelp()
 
@@ -255,13 +261,13 @@ class talairachAlignment():
 
         # Convert to NIFTI
         run_shell_cmd('3dcopy ' + conf.nextInputFilename[-1] + '+tlrc ' + conf.nextInputFilename[-1] + '.nii.gz',logname)
-        run_shell_cmd('cp ' + conf.nextInputFilename[-1] + "_vr_motion.1D allruns_motion_params.1D",logname)
+        run_shell_cmd('cp ' + conf.nextInputFilename[-2] + "_vr_motion.1D allruns_motion_params.1D",logname)
 
 
 
 
 
-class checkMotionParams():
+class CheckMotionParams():
 
     def __init__(self, conf, showPlot=True):
         self.conf = conf
@@ -271,8 +277,9 @@ class checkMotionParams():
         # Added if statement to see if we need to process runs separately
         if self.conf.runEPIsSeparate == True:
             for runNum in range(1,len(self.conf.epi_series)+1):
-                self.conf.nextInputFilename[-1] = self.conf.nextInputFilename[-1].replace('epi', 'epi_r' + str(runNum))
-                self.runHelp(conf)
+                self.conf.nextInputFilename[-1] = re.sub('epi_r[0-9]', 'epi_r' + str(runNum),self.conf.nextInputFilename[-1])
+                self.conf.nextInputFilename[-2] = re.sub('epi_r[0-9]', 'epi_r' + str(runNum),self.conf.nextInputFilename[-2])
+                self.runHelp()
         else:
             self.runHelp()
         
@@ -295,7 +302,7 @@ class checkMotionParams():
 
 
 
-class timeSeriesExtraction():
+class TimeSeriesExtraction():
 
     def __init__(self, conf):
         self.conf = conf
@@ -303,9 +310,10 @@ class timeSeriesExtraction():
     def run(self):
         # Added if statement to see if we need to process runs separately
         if self.conf.runEPIsSeparate == True:
-            for runNum in len(self.conf.epi_series):
-                # Update epi run name so we can analyze EPI scans separately
-                self.conf.nextInputFilename[-1] = self.conf.nextInputFilename[-1].replace('epi', 'epi_r' + str(runNum))
+            for runNum in range(1,len(self.conf.epi_series)+1):
+                # Update epi run name so we can analyze EPI scans separately for both input and output filenames
+                self.conf.nextInputFilename[-1] = re.sub('epi_r[0-9]', 'epi_r' + str(runNum),self.conf.nextInputFilename[-1])
+                self.conf.nextInputFilename[-2] = re.sub('epi_r[0-9]', 'epi_r' + str(runNum),self.conf.nextInputFilename[-2])
                 # Create separate time series 1D files for each scan, since we're analyzing each run separately.
                 self.conf.wm_timeseries = self.conf.subjID + '_WM_timeseries_r' + str(runNum) 
                 self.conf.ventricles_timeseries = self.conf.subjID + '_ventricles_timeseries_r' + str(runNum) 
@@ -338,7 +346,7 @@ class timeSeriesExtraction():
 
         if conf.hcpData == False: # no need to run @auto_tlrc on hcpdata
             # Transform aseg to TLRC space
-            run_shell_cmd('@auto_tlrc -apar ' + conf.subjfMRIDir + 'anat_mprage_skullstripped_tlrc.nii.gz -input ' + conf.subjID + '_fs_seg.nii.gz',logname)
+            run_shell_cmd('@auto_tlrc -apar ' + conf.subjfMRIDir + 'anat_mprage_skullstripped+tlrc -input ' + conf.subjID + '_fs_seg.nii.gz',logname)
 
         run_shell_cmd("3dcalc -overwrite -a " + conf.subjID + "_fs_seg.nii.gz -expr 'ispositive(a)' -prefix " + conf.subjID + '_wholebrainmask.nii.gz',logname)
 
@@ -353,17 +361,19 @@ class timeSeriesExtraction():
 
 
 
-class runGLM():
+class RunGLM():
 
     def __init__(self, conf):
         self.conf = conf
+        self.conf.nextInputFilename.append('NuissanceResid_' + self.conf.nextInputFilename[-1])
 
     def run(self):
         # Added if statement to see if we need to process runs separately
         if self.conf.runEPIsSeparate == True:
-            for runNum in len(self.conf.epi_series):
-                # Update epi run name so we can analyze EPI scans separately
-                self.conf.nextInputFilename[-1] = self.conf.nextInputFilename[-1].replace('epi', 'epi_r' + str(runNum))
+            for runNum in range(1,len(self.conf.epi_series)+1):
+                # Update epi run name so we can analyze EPI scans 
+                self.conf.nextInputFilename[-1] = re.sub('epi_r[0-9]', 'epi_r' + str(runNum),self.conf.nextInputFilename[-1])
+                self.conf.nextInputFilename[-2] = re.sub('epi_r[0-9]', 'epi_r' + str(runNum),self.conf.nextInputFilename[-2])
                 # Create separate time series 1D files for each scan, since we're analyzing each run separately.
                 # In the future, another alternative and cleaner way to deal with this is to not have to re-instantiate this in the conf file, and rather, just keep each run's version in a list so the code in preprocNodes can be re-used.
                 self.conf.wm_timeseries = self.conf.subjID + '_WM_timeseries_r' + str(runNum)
@@ -379,10 +389,68 @@ class runGLM():
             # run
             self.runHelp()
 
+    def organizeStimTimes(self):
+        # Make local variables for better readability
+        conf = self.conf
+        GLM = self.conf.GLM
+        motionregs = GLM['motionregressors']
+        stimtimes = GLM['stimtimes']
+
+        stimtimes = []
+        if GLM['type'] == 'Activation':
+            # compute number of motion regressors
+            num_motionregs = len(GLM['motionregressors'])
+            # compute number of stimulus times
+            num_stims = len(GLM['stimtimes'])/2 #needs to be divided by 2, since also has a label associated with it
+
+            # compute numstimes total
+            totalnumstimes = num_motionregs + num_stims
+
+            # Keep track of stimcount
+            stimcount = 1
+
+            # first evaluate motion regressors
+            for key in motionregs:
+                stimtimes.append('-stim_file ' + str(stimcount) + ' ' + conf.subjfMRIDir + motionregs[key] + ' -stim_base ' str(stimcount) + ' ')
+                stimcount += 1
+
+            # next evaluate stimulus task times
+            for key in stimtimes:
+                # Replace %s glob with proper subject ID
+                stimtimes[key][0] = stimtimes[key][0].replace('%s', conf.subjID)
+
+                # Now append correct stimulus file to array
+                stimtimes.append('-stim_file ' + str(stimcount) + ' ' + conf.stimFileDir + stimtimes[key][0] + ' -stim_label ' + str(stimcount) + ' ' + stimtimes[key][1] + ' ')
+                stimcount += 1
+
+            # Return stimtimes array
+            return stimtimes
+
+        elif GLM['type'] == 'rsfcMRI':
+            # First make sure to include wm, ventricle and whole brain timeseries regressors (and derivatives) manually
+            stimtimes.append('-stim_file 1 ' + conf.wm_timeseries + '.1D -stim_label 1 WM ')
+            stimtimes.append('-stim_file 2 ' + conf.ventricles_timeseries + '.1D -stim_label 2 Vent ')
+            stimtimes.append('-stim_file 3 ' + conf.wm_timeseries + '_deriv.1D -stim_label 3 WMDeriv ')
+            stimtimes.append('-stim_file 4 ' + conf.ventricles_timeseries + '_deriv.1D -stim_label 4 VentDeriv ')
+            stimtimes.append("-stim_file 5 " + conf.wholebrain_timeseries + '.1D -stim_label 5 WholeBrain ')
+            stimtimes.append("-stim_file 6 " + conf.wholebrain_timeseries + '_deriv.1D -stim_label 6 WholeBrainDeriv ')
+            stimcount = 7 # need to start at 7 since we already included the first 6 stimtimes
+            for key in motionregs:
+                stimtimes.append("-stim_file " + str(stimcount) + ' ' + conf.subjfMRIDir + motionregs[key] " -stim_base " + str(stimcount) + ' ')
+                stimcount += 1
+
+            # return stimtimes array
+            return stimtimes
+
+
+        else: 
+            raise Exception("Not a valid type of GLM. Please edit GLM 'type' input to either 'Activation' or 'rsfcMRI'")
+
     def runHelp(self):    
 
         #make local variable
         conf = self.conf
+        GLM = self.conf.GLM
 
         logname = conf.logname
         os.chdir(conf.subjfMRIDir)
@@ -396,20 +464,22 @@ class runGLM():
         print 'Run GLM to remove nuisance time series (motion, white matter, ventricles)'
         input = '-input ' + conf.nextInputFilename[-2] + '.nii.gz '
         mask = '-mask ' + conf.subjMaskDir + conf.subjID + '_gmMask_func_dil1vox.nii.gz '
-        # concat = '-concat ' + '"' + conf.concatString + '" '
-        concat = ''
-        polort = '-polort 1 '
-        num_stimts = '-num_stimts 12 '
-        stimfile1 = '-stim_file 1 ' + conf.wm_timeseries + '.1D -stim_label 1 WM '
-        stimfile2 = '-stim_file 2 ' + conf.ventricles_timeseries + '.1D -stim_label 2 Vent '
-        stimfile3 = '-stim_file 3 ' + conf.wm_timeseries + '_deriv.1D -stim_label 3 WMDeriv '
-        stimfile4 = '-stim_file 4 ' + conf.ventricles_timeseries + '_deriv.1D -stim_label 4 VentDeriv '
-        stimfile5 = "-stim_file 5 allruns_motion_params.1D'[0]' -stim_base 5 "
-        stimfile6 = "-stim_file 6 allruns_motion_params.1D'[1]' -stim_base 6 "
-        stimfile7 = "-stim_file 7 allruns_motion_params.1D'[2]' -stim_base 7 "
-        stimfile8 = "-stim_file 8 allruns_motion_params.1D'[3]' -stim_base 8 "
-        stimfile9 = "-stim_file 9 allruns_motion_params.1D'[4]' -stim_base 9 "
-        stimfile10 = "-stim_file 10 allruns_motion_params.1D'[5]' -stim_base 10 "
+        concat = '' if GLM['concat'] == False else '-concat ' + '"' + conf.concatString + '" '
+        polort = '-polort ' + GLM['polort'] + ' '
+        stimtimes = self.organizeStimTimes()
+        num_stimts = '-num_stimts ' + str(len(stimtimes)) + ' '
+        # make stimtimes into a single string
+        stimtimes = ''.join(stimtimes)
+        # stimfile1 = '-stim_file 1 ' + conf.wm_timeseries + '.1D -stim_label 1 WM '
+        # stimfile2 = '-stim_file 2 ' + conf.ventricles_timeseries + '.1D -stim_label 2 Vent '
+        # stimfile3 = '-stim_file 3 ' + conf.wm_timeseries + '_deriv.1D -stim_label 3 WMDeriv '
+        # stimfile4 = '-stim_file 4 ' + conf.ventricles_timeseries + '_deriv.1D -stim_label 4 VentDeriv '
+        # stimfile5 = "-stim_file 5 allruns_motion_params.1D'[0]' -stim_base 5 "
+        # stimfile6 = "-stim_file 6 allruns_motion_params.1D'[1]' -stim_base 6 "
+        # stimfile7 = "-stim_file 7 allruns_motion_params.1D'[2]' -stim_base 7 "
+        # stimfile8 = "-stim_file 8 allruns_motion_params.1D'[3]' -stim_base 8 "
+        # stimfile9 = "-stim_file 9 allruns_motion_params.1D'[4]' -stim_base 9 "
+        # stimfile10 = "-stim_file 10 allruns_motion_params.1D'[5]' -stim_base 10 "
         # these stimfiles are commented out because this had to be adapted from analyzing the HCP rest data
         # stimfile11 = "-stim_file 11 rest_allruns_motion_params.1D'[6]' -stim_base 11 "
         # stimfile12 = "-stim_file 12 rest_allruns_motion_params.1D'[7]' -stim_base 12 "
@@ -417,29 +487,56 @@ class runGLM():
         # stimfile14 = "-stim_file 14 rest_allruns_motion_params.1D'[9]' -stim_base 14 "
         # stimfile15 = "-stim_file 15 rest_allruns_motion_params.1D'[10]' -stim_base 15 "
         # stimfile16 = "-stim_file 16 rest_allruns_motion_params.1D'[11]' -stim_base 16 "
-        stimfile11 = "-stim_file 11 " + conf.wholebrain_timeseries + '.1D -stim_label 11 WholeBrain '
-        stimfile12 = "-stim_file 12 " + conf.wholebrain_timeseries + '_deriv.1D -stim_label 12 WholeBrainDeriv '
-        xsave = '-xsave -x1D xmat_rall.x1D -xjpeg xmat_rall.jpg -errts NuissanceResid_Resids '
-        jobs = '-jobs 1 -float -noFDR '
-        bucket = '-bucket NuissanceResid_outbucket_' + conf.nextInputFilename[-2] + '+tlrc -overwrite' 
+        # stimfile11 = "-stim_file 11 " + conf.wholebrain_timeseries + '.1D -stim_label 11 WholeBrain '
+        # stimfile12 = "-stim_file 12 " + conf.wholebrain_timeseries + '_deriv.1D -stim_label 12 WholeBrainDeriv '
+        xsave = '-xsave -x1D xmat_rall.x1D -xjpeg xmat_rall.jpg '
+        
+        gltsym = '' if GLM['gltsym'] == None else GLM['gltsym'] + ' '
+        errts = '' if GLM['errts'] == None else GLM['errts'] + ' '
+        fdr = '' if  GLM['noFDR'] == False else '-noFDR '
+        fout = '-fout ' if GLM['fout'] == True else ''
+        tout = '-tout ' if GLM['tout'] == True else ''
+        jobs = '-jobs 1 -float '
 
-        glm_command = '3dDeconvolve ' + input + mask + concat + polort + num_stimts + stimfile1 + stimfile2 + stimfile3 + stimfile4 + stimfile5 + stimfile6 + stimfile7 + stimfile8 + stimfile9 + stimfile10 + stimfile11 + stimfile12 + xsave + jobs + bucket
+        # change outbucket output name according to type of GLM run
+        if GLM['type'] == 'Activation':
+            bucket = '-bucket ' + conf.AnalysisName + '_outbucket -cbucket ' + conf.AnalysisName + '_cbucket'
+        else:
+            bucket = '-bucket NuissanceResid_outbucket_' + conf.nextInputFilename[-2] + '+tlrc -overwrite' 
+
+
+        glm_command = '3dDeconvolve ' + input + mask + concat + polort + num_stimts + stimtimes + gltsym + fout + tout + xsave + errts + jobs + fdr + bucket
 
         run_shell_cmd(glm_command, logname)
 
-        run_shell_cmd('rm ' + conf.nextInputFilename[-1] + '*', logname)
-        run_shell_cmd('3dcopy NuissanceResid_Resids+tlrc ' + conf.nextInputFilename[-1] + '+tlrc', logname)
-        run_shell_cmd('rm NuissanceResid_Resids+tlrc', logname)
+        if GLM['type'] == 'rsfcMRI':
+            run_shell_cmd('rm ' + conf.nextInputFilename[-1] + '*', logname)
+            run_shell_cmd('3dcopy NuissanceResid_Resids+tlrc ' + conf.nextInputFilename[-1] + '+tlrc', logname)
+            run_shell_cmd('rm NuissanceResid_Resids+tlrc', logname)
+        elif GLM['type'] == 'Activation':
+            run_shell_cmd('1dplot -sep_scl -plabel ' + conf.subjID + 'DesignMatrix xmat_rall.x1D &', logname)
 
 
-
-class spatialSmoothing():
+class SpatialSmoothing():
 
     def __init__(self, conf):
         self.conf = conf
         self.conf.nextInputFilename.append('smInMask_' + conf.nextInputFilename[-1])
 
+
     def run(self):
+        if self.conf.runEPIsSeparate == True:
+            print 'Running separately for each EPI scan...'
+            for runNum in range(1,len(self.conf.epi_series)+1):
+                self.conf.nextInputFilename[-1] = re.sub('epi_r[0-9]', 'epi_r' + str(runNum),self.conf.nextInputFilename[-1])
+                self.conf.nextInputFilename[-2] = re.sub('epi_r[0-9]', 'epi_r' + str(runNum),self.conf.nextInputFilename[-2])
+                self.runHelp()
+        else:
+            print 'Running on concatenated EPIs...'
+            self.runHelp()
+
+
+    def runHelp(self):
         #make local variable
         conf = self.conf
 
