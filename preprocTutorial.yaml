@@ -46,7 +46,7 @@ Nodes :
     #     cmd : '3dresample -dxyz 3.0 3.0 3.0 -inset %input -prefix %output'
 
 # Indicate which nodes you want to run in the pipeline.  The default is to run all nodes, but if this is the first time running the pipeline, I suggest you run each node at a time. If you just want to run a single node, just put a single number (indicating the order in the above Nodes)
-runNodes : [0]
+runNodes : [11]
 
 
 ###
@@ -67,9 +67,9 @@ listOfSubjects : ['401']
 # Indicate the number of runs per subject
 runsPerSubj : 10
 # Base directory of the study; Curr
-basedir : '/Volumes/Drobot/projects/IndivRITL/'
+basedir : '/Volumes/Drobot/scratchdisk/taku_pypreproc2/'
 # scripts directory
-scriptsDir : '/Volumes/Drobot/projects/IndivRITL/docs/scripts/'
+scriptsDir : '/Volumes/Drobot/scratchdisk/taku_pypreproc2/scripts/'
 # atlas directory - should not need to change this
 atlasAnat : '/Applications/afni/MNI152_1mm_uni+tlrc' # 1mm template for multiband (2mm for regular)
 atlasEPI : '/Applications/afni/MNI_EPI+tlrc' # 2mm template for multiband, 3mm for regular# Location to AFNI's binary files - should not need to change this
@@ -97,15 +97,15 @@ subjDicomDir : '/Volumes/Drobot/docshare/colelabpreproctutorial/assignment1/rawd
 # Indicate where the freesurfer output should be, ideally in subjDir + 'freesurfer/'
 freesurferDir : '/Volumes/Drobot/docshare/colelabpreproctutorial/freesurfer/%s/'
 # Subject output directory
-subjDir : '/Volumes/Drobot/scratchdisk/taku_pypreproc/%s/'
+subjDir : '/Volumes/Drobot/scratchdisk/taku_pypreproc2/%s/'
 # stimulus file directory (behavioral encodings)
 stimFileDir : '/Volumes/Drobot/docshare/colelabpreproctutorial/assignment2/timingfiles/'
 # Indicate the subject fMRI directory
-subjfMRIDir : '/Volumes/Drobot/scratchdisk/taku_pypreproc/%s/fMRI/'
+subjfMRIDir : '/Volumes/Drobot/scratchdisk/taku_pypreproc2/%s/fMRI/'
 # Indicate the subject Mask directory
-subjMaskDir : '/Volumes/Drobot/scratchdisk/taku_pypreproc/%s/masks/'
+subjMaskDir : '/Volumes/Drobot/scratchdisk/taku_pypreproc2/%s/masks/'
 # Indicate the subject analysis directory (typically should be a subdir of subjfMRIDir)
-subjAnalysisDir : '/Volumes/Drobot/scratchdisk/taku_pypreproc/%s/fMRI/subjAnalysis/'
+subjAnalysisDir : '/Volumes/Drobot/scratchdisk/taku_pypreproc2/%s/fMRI/subjAnalysis/'
 
 
 # Look in the raw data directory and observe all the various directories (should be numbered 1 through how ever many scans there were).  Find the directory containing the T1/anatomical scan.  If you're unsure, look inside 'subjRawDataDir'
@@ -121,7 +121,7 @@ nproc : 1
 
 # Ouput Log file:
 # Default get time and date
-logname : '/Volumes/Drobot/scratchdisk/taku_pypreproc/%s/%s_taku.log'
+logname : '/Volumes/Drobot/scratchdisk/taku_pypreproc2/%s/%s_taku.log'
 
 #############################################################################################################
 ## GLM parameters ##
@@ -154,16 +154,17 @@ GLM :
         4 : ["stime_%s_stimfile_AssocMemBlocks_CombStrength_EV4_Block_AuditoryCont.1D.01.1D 'BLOCK(54,1)'", 'AuditoryCont']
 
 
-        5 : ["stime_%s_stimfile_AssocMemBlocks_CombStrength_EV2_Block_VisualCont.1D.01.1D 'BLOCK(54,1)'", 'VisualCont']
+        5 : ["stime_%s_stimfile_AssocMemBlocks_CombStrength_EV5_Block_VisualCont.1D.01.1D 'BLOCK(54,1)'", 'VisualCont']
 
-    gltsym : "-gltsym 'SYM: AuditoryCont -VisualCont' -glt_label 1 AudVsVisCont'
+    # enter the parameter for gltsym. Otherwise, leave it blank.
+    gltsym : "-gltsym 'SYM: AuditoryCont -VisualCont' -glt_label 1 AudVsVisCont"
     # Don't compute statistic v FDR (default: True for rsfcMRI, False for activation)
     noFDR : True
     # Label True if you want each stimulus to have a F-statistic. Default is True
     fout : True
     # Label True if you want each stimulus to have a T-statistic. Default is True
     tout : True
-    # Give the label of the residual error time series. None for this tutorial
-    errts : None #'NuissanceResid_Resids'
+    # Give the label of the residual error time series. Otherwise leave it blank
+    errts : #'NuissanceResid_Resids'
 
 

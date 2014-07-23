@@ -30,10 +30,12 @@ class PrepareMPRAGE():
             
         print 'Preparing MPRAGE file (anatomical image)'
 
-        fileFindString = '*.dcm' #will search for a string that ends with '.dcm'
 
         ##****## In the future, will want to adjust this to use os.walk to search subdirectories for files of *.dcm
         dirName = glob.glob(conf.subjRawDataDir + conf.T1_image)[0] 
+
+        # At this point, will only search for DICOMs with *.dcm extensions, or starting with MR*
+        fileFindString = 'MR*' if glob.glob(dirName + '/*.dcm') == [] else '*.dcm'
         dicomRenameDir = dirName + '/' + fileFindString
 
         #Sort DICOM files (to make sure they will be read in the order they were collected in) using Freesurfer
@@ -106,8 +108,8 @@ class PrepareEPI():
         for runNum in range(1,numRuns + 1):
             print '--Run', runNum, '---'
 
-            fileFindString = '*.dcm'
             runRawDir = rawDirRunList[runNum-1]
+            fileFindString = 'MR*' if glob.glob(runRawDir + '/*.dcm') == [] else '*.dcm'
             runRawFile = runRawDir + '/' + fileFindString
             
             # Sorting DICOM files (to make sure they will be read in the order they were collected in) using Freesurfer.
@@ -188,9 +190,11 @@ class ConcatenateRuns():
 
         logname = conf.logname
         os.chdir(conf.subjfMRIDir)
-        runList = ' '
-        concatString = '1D:'
-        TRCount = 0
+
+        # Get concat variables from conf object
+        runList = conf.runList
+        concatString = conf.concatString
+
 
         numRuns = len(conf.epi_series)
 
@@ -365,7 +369,12 @@ class RunGLM():
 
     def __init__(self, conf):
         self.conf = conf
-        self.conf.nextInputFilename.append('NuissanceResid_' + self.conf.nextInputFilename[-1])
+        if conf.GLM['type'] == 'rsfcMRI':
+            self.conf.nextInputFilename.append('NuissanceResid_' + self.conf.nextInputFilename[-1])
+        elif conf.GLM['type'] == 'Activation':
+            self.conf.nextInputFilename.append(conf.AnalysisName + '_outbucket')
+        else:
+            raise Exception("Not a valid type of GLM. Please edit GLM 'type' input to either 'Activation' or 'rsfcMRI'")
 
     def run(self):
         # Added if statement to see if we need to process runs separately
@@ -394,7 +403,7 @@ class RunGLM():
         conf = self.conf
         GLM = self.conf.GLM
         motionregs = GLM['motionregressors']
-        stimtimes = GLM['stimtimes']
+        stimfiles = GLM['stimtimes']
 
         stimtimes = []
         if GLM['type'] == 'Activation':
@@ -411,16 +420,16 @@ class RunGLM():
 
             # first evaluate motion regressors
             for key in motionregs:
-                stimtimes.append('-stim_file ' + str(stimcount) + ' ' + conf.subjfMRIDir + motionregs[key] + ' -stim_base ' str(stimcount) + ' ')
+                stimtimes.append('-stim_file ' + str(stimcount) + ' ' + conf.subjfMRIDir + motionregs[key] + ' -stim_base ' + str(stimcount) + ' ')
                 stimcount += 1
 
             # next evaluate stimulus task times
-            for key in stimtimes:
+            for key in stimfiles:
                 # Replace %s glob with proper subject ID
-                stimtimes[key][0] = stimtimes[key][0].replace('%s', conf.subjID)
+                stimfiles[key][0] = stimfiles[key][0].replace('%s', conf.subjID)
 
                 # Now append correct stimulus file to array
-                stimtimes.append('-stim_file ' + str(stimcount) + ' ' + conf.stimFileDir + stimtimes[key][0] + ' -stim_label ' + str(stimcount) + ' ' + stimtimes[key][1] + ' ')
+                stimtimes.append('-stim_times ' + str(stimcount) + ' ' + conf.stimFileDir + stimfiles[key][0] + ' -stim_label ' + str(stimcount) + ' ' + stimfiles[key][1] + ' ')
                 stimcount += 1
 
             # Return stimtimes array
@@ -436,7 +445,7 @@ class RunGLM():
             stimtimes.append("-stim_file 6 " + conf.wholebrain_timeseries + '_deriv.1D -stim_label 6 WholeBrainDeriv ')
             stimcount = 7 # need to start at 7 since we already included the first 6 stimtimes
             for key in motionregs:
-                stimtimes.append("-stim_file " + str(stimcount) + ' ' + conf.subjfMRIDir + motionregs[key] " -stim_base " + str(stimcount) + ' ')
+                stimtimes.append("-stim_file " + str(stimcount) + ' ' + conf.subjfMRIDir + motionregs[key] + " -stim_base " + str(stimcount) + ' ')
                 stimcount += 1
 
             # return stimtimes array
@@ -507,6 +516,7 @@ class RunGLM():
 
         glm_command = '3dDeconvolve ' + input + mask + concat + polort + num_stimts + stimtimes + gltsym + fout + tout + xsave + errts + jobs + fdr + bucket
 
+        print 'Running the GLM command:', glm_command
         run_shell_cmd(glm_command, logname)
 
         if GLM['type'] == 'rsfcMRI':
@@ -546,6 +556,7 @@ class SpatialSmoothing():
         print '-Spatially smooth data-'
 
         run_shell_cmd('3dBlurInMask -input ' + conf.nextInputFilename[-2] + '+tlrc -FWHM ' + str(conf.FWHMSmoothing) + ' -mask ' + conf.subjMaskDir + conf.subjID + '_gmMask_func_dil1vox.nii.gz -prefix ' + conf.nextInputFilename[-1] + '.nii.gz', logname)
+
 
 
 class CustomCmd():

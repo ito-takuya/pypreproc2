@@ -98,11 +98,11 @@ MAIN METHOD: method will the below commands as an executable
 """
 def main(): 
 
-	defaultConfig = '/projects/IndivRITL/docs/scripts/pypreproc/pilotPreproc.yaml'
+	defaultConfig = '/projects/ColePreprocessingPipeline/docs/taku_dev/pypreproc2/preprocTutorial.yaml'
 	# Ask for input path
 	configfile = raw_input('Give the full path of your configuration file (with a .yaml extension).  [Default: ' + defaultConfig + ']: ')
 	# Set default, if nothing is given
-	configfile = '/projects/IndivRITL/docs/scripts/pypreproc/pilotPreproc.yaml' if configfile == '' else configfile
+	configfile = '/projects/ColePreprocessingPipeline/docs/taku_dev/pypreproc2/preprocTutorial.yaml' if configfile == '' else configfile
 
 
 	# Creates new config object
