@@ -376,6 +376,10 @@ class RunGLM():
         else:
             raise Exception("Not a valid type of GLM. Please edit GLM 'type' input to either 'Activation' or 'rsfcMRI'")
 
+        # make sure concatString is defined as empty, for EPIs
+        if conf.runEPIsSeparate == True:
+            self.conf.concatString = ''
+
     def run(self):
         # Added if statement to see if we need to process runs separately
         if self.conf.runEPIsSeparate == True:
@@ -471,10 +475,10 @@ class RunGLM():
         run_shell_cmd('1d_tool.py -overwrite -infile ' + conf.wholebrain_timeseries + '.1D -derivative -write ' + conf.wholebrain_timeseries + '_deriv.1D', logname)
 
         print 'Run GLM to remove nuisance time series (motion, white matter, ventricles)'
-        input = '-input ' + conf.nextInputFilename[-2] + '.nii.gz '
+        input = '-input ' + conf.nextInputFilename[-2] + '.nii.gz ' if GLM['input'] == None else GLM['input']
         mask = '-mask ' + conf.subjMaskDir + conf.subjID + '_gmMask_func_dil1vox.nii.gz '
         concat = '' if GLM['concat'] == False else '-concat ' + '"' + conf.concatString + '" '
-        polort = '-polort ' + GLM['polort'] + ' '
+        polort = '-polort ' + str(GLM['polort']) + ' '
         stimtimes = self.organizeStimTimes()
         num_stimts = '-num_stimts ' + str(len(stimtimes)) + ' '
         # make stimtimes into a single string
@@ -501,7 +505,7 @@ class RunGLM():
         xsave = '-xsave -x1D xmat_rall.x1D -xjpeg xmat_rall.jpg '
         
         gltsym = '' if GLM['gltsym'] == None else GLM['gltsym'] + ' '
-        errts = '' if GLM['errts'] == None else GLM['errts'] + ' '
+        errts = '' if GLM['errts'] == None else '-errts ' + GLM['errts'] + ' '
         fdr = '' if  GLM['noFDR'] == False else '-noFDR '
         fout = '-fout ' if GLM['fout'] == True else ''
         tout = '-tout ' if GLM['tout'] == True else ''
@@ -557,6 +561,14 @@ class SpatialSmoothing():
 
         run_shell_cmd('3dBlurInMask -input ' + conf.nextInputFilename[-2] + '+tlrc -FWHM ' + str(conf.FWHMSmoothing) + ' -mask ' + conf.subjMaskDir + conf.subjID + '_gmMask_func_dil1vox.nii.gz -prefix ' + conf.nextInputFilename[-1] + '.nii.gz', logname)
 
+
+class GroupANOVA():
+    """
+    DESCRIPTION: This object deals with running group ANOVAs, in particular for activation studies.
+
+    """
+    def __init__(self, conf):
+        self.conf = conf
 
 
 class CustomCmd():

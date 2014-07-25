@@ -8,7 +8,7 @@
 # Requires to use of a config file, (*.conf) to set all pipeline parameters.
 
 import sys
-sys.path.append('preprocbin')
+sys.path.append('/projects/ColePreprocessingPipeline/docs/pypreproc2/preprocbin')
 from run_shell_cmd import run_shell_cmd
 import os
 import glob

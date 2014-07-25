@@ -1,26 +1,40 @@
-# List of Parameters for Preprocessing
+# PyPreproc 2
+# Taku Ito
+# 07/23/2014
+
+# N.B.: DO NOT CHANGE THE INDENTATION OF THIS FILE! It will mess up the pipeline and how the parameters are parsed. I will come up with a better solution later.
+
+# Parameters for Preprocessing and Preliminary Analysis
 
 ################ Section 1 ###################
-# Execution block commands.  Either True or False:
-# Indicate which nodes you'd like to include in the pipeline
+### Pipeline Node Set-Up ###
+
+# Step 1: Indicate the nodes you'd like to include in the pipeline, and the correct order of nodes (the ordering is very important).
+# Optional Step: If you know what you're doing, you can include your own custom command/nodes.
+# Custom Node Example (Make sure the input, output, etc. are all indented following the order number):
+    # CUSTOM COMMAND:
+    # 5 :  
+        # input : '%nextInputFilename' # This should be nextInputFilename, unless you're using a file not within the pipeline (or you know exactly what you're doing)
+        # output : 'resampled_%nextInputFilename'
+        # insertOutputAsNextInput : True #This is used only if you will process this output again WITHIN THIS PIPELINE.  If not, leave as 'None'. Default should be None
+        # cmd : '3dresample -dxyz 3.0 3.0 3.0 -inset %input -prefix %output'
+
 Nodes : 
-    # Indicate the order you want to execute blocks - if you know what you're doing, you can add your own blocks (just add additional number - value pairs).  If you add your own nodes, make sure they are indented.
 
     ######## CURRENT LIST OF AVAILABLE NODES: #########
+    # PrepareMPRAGE, PrepareEPI, SliceTimeCorrection, ConcatenateRuns, TalairachAlignment, CheckMotionParams, CreateGMMask, CreateWMMask, CreateVentricleMask, TimeSeriesExtraction, SpatialSmoothing, RunGLM, GroupAnalysis
 
-    # NODES: prepareMPRAGE, prepareEPI, sliceTimeCorrection, concatenateRuns, talairachAlignment, checkMotionParams, createGMMask, createWMMask, createVentricleMask, timeSeriesExtraction, spatialSmoothing, runGLM, groupAnalysis
-
-    # Prepares the anatomical MRPAGE image; also runs freesurfer unless specified otherwise
+    # Prepares the anatomical MRPAGE image; also runs freesurfer unless specified otherwise (see below, @ Node Parameters, step 3)
     0 : PrepareMPRAGE
     # Prepares the EPI images
     1 : PrepareEPI
-    # Runs slice time correction on the epi images. Make sure you know what the acquisition pattern is for this command!
+    # Runs slice time correction on the epi images. Make sure you know what the acquisition pattern is for this command (see below, @ Data Parameters Section)!
     2 : SliceTimeCorrection
     # Concatenates all the functional runs into a single run
     3 : ConcatenateRuns
     # Talairach transforms the anatomical, functional, epi images to a template (MNI_EPI template)
     4 : TalairachAlignment
-    # Checks the motion parameters
+    # Checks the motion parameters, and writes them to file
     5 : CheckMotionParams
     # Creates a gray matter mask using Freesurfer output
     6 : CreateGMMask
@@ -30,111 +44,118 @@ Nodes :
     8 : CreateVentricleMask
     # Extracts the time series using the gray, white, and ventricle masks
     9 : TimeSeriesExtraction
-    # Smooths the epi/functional images according to the FWHMSmoothing parameter below
+    # Smooths the epi/functional images according to the FWHMSmoothing parameter (see below, @ Data Parameters Section)
     10 : SpatialSmoothing
     # Runs a GLM analysis on final, spatially smoothed output (single subject). If 'True', will most likely need to edit certain parameters in AFNI's command.
     11 : RunGLM
     # Run a group analysis running a two-factor ANOVA; if 'True', will need to edit certain parameters for this function
     12 : GroupAnalysis
 
-    # CUSTOM COMMANDS:
-    # If there are custom commands you want to include in the pipeline, just add them as a standard string. For example, if you wanted to run a 3dresample on the input EPI, it would go as follows:
-    # 5 :  
-    #     input : '%nextInputFilename' # This should be nextInputFilename, unless you're using a file not within the pipeline (or you know exactly what you're doing)
-    #     output : 'resampled_%nextInputFilename'
-    #     insertOutputAsNextInput : True #This is used only if you will process this output again WITHIN THIS PIPELINE.  If not, leave as 'None'. Default should be None
-    #     cmd : '3dresample -dxyz 3.0 3.0 3.0 -inset %input -prefix %output'
+# Step 2: Choose which nodes to run.
+# Indicate which nodes you want to actually run in the pipeline.  If you want to run all of them, make sure to include all numbers.  Note: The order is decided by the number of the node, not the order you list below.  It is suggested that when first testing out a pipeline, you run each node separately on a single subject to ensure the pipeline is working correctly.  If you just want to run a single node, just put a single number in square brackets (indicating the order in the above Nodes)
+runNodes : [] # e.g., [0, 1, 2] will run the first three nodes
 
-# Indicate which nodes you want to run in the pipeline.  The default is to run all nodes, but if this is the first time running the pipeline, I suggest you run each node at a time. If you just want to run a single node, just put a single number (indicating the order in the above Nodes)
-runNodes : [11]
-
-
-###
+# Step 3: Specific Sub-Node Parameters
 # Parameters below aren't exactly nodes, but rather, they are sub-nodes that tell the pipeline whether or not to do extra steps or not.
 # Is this HCP data?
-hcpData : False
+hcpData : False # True or False.  Will always be False, unless you're running the pipeline on Minimally Preprocessed Data from HCP (though this current pipeline hasn't been tested on that yet...)
 # If False, will skip Freesurfer. Typically this should be 'True'
-runFreesurfer : False
+runFreesurfer : False #True or False.  If True, will run Freesurfer, which takes a long time to run.
 
 
 
 ################ Section 2 ###################
-# Main data parameter set up; defaults are set to the ColePreprocTutorial dataset.
+### Data Parameters Section ###
+# Step 1: Main data parameter set up
+
 # Indicate the Analysis name of this project:
 AnalysisName : 'Block'
 # Indicate list of subjects with strings, e.g., 'subj1', 'subj2', etc.
 listOfSubjects : ['401']
 # Indicate the number of runs per subject
 runsPerSubj : 10
-# Base directory of the study; Curr
-basedir : '/Volumes/Drobot/scratchdisk/taku_pypreproc2/'
-# scripts directory
-scriptsDir : '/Volumes/Drobot/scratchdisk/taku_pypreproc2/scripts/'
-# atlas directory - should not need to change this
+# Indicate the base directory of the study.
+basedir : '/Volumes/Drobot/scratchdisk/preproctutorial_<your_username>/'
+# Indicate the scripts directory.  Should be a subdirectory of the base directory
+scriptsDir : '/Volumes/Drobot/scratchdisk/preproctutorial_<your_username>/scripts/'
+# Indicate the brain atlas to be used for the anatomical (T1) image - should not need to change this
 atlasAnat : '/Applications/afni/MNI152_1mm_uni+tlrc' # 1mm template for multiband (2mm for regular)
-atlasEPI : '/Applications/afni/MNI_EPI+tlrc' # 2mm template for multiband, 3mm for regular# Location to AFNI's binary files - should not need to change this
+# Indicate the brain atlas to be used for the functional (EPI) image - should not need to change htis
+atlasEPI : '/Applications/afni/MNI_EPI+tlrc' # 2mm template for multiband, 3mm for regular
+# Location to AFNI's binary files - should not need to change this on ColeLabMac
 AFNI_loc : '/Applications/afni/afni'
-# Location to Freesurfer's binary files - should not need to change this
+# Location to Freesurfer's binary files - should not need to change this on ColeLabMac
 FS_loc : '/Applications/freesurfer/bin/freesurfer'
-# Indicate the TR in seconds for the scan
+# Indicate in seconds the lenghth of each TR for the functional scans
 TR : '1s' 
-# Indicate the number of TRs per run. #### EDIT FEATURE, to make sure you can enable runs with different TR lengths.
+# Indicate the number of TRs per run. #### Note to Taku: Edit this feature to make sure you can enable runs with different TR lengths. (e.g., have an array [528, 356] corresponding to each run in epi_series with number of TRs)
 numTRs : 528
-# Indicate the smoothing parameter you want. 
+# Indicate the smoothing parameter, assuming you're including SpatialSmoothing node in the pipeline
 FWHMSmoothing : 6
-# Indicate teh acquisition order. For Siemens TRIO (standard EPI sequence): alt+z when you have an odd number of slices, alt+z2 when you have an even number of slices.  'None' for multiband data.
+# Indicate the acquisition order. For Siemens TRIO (standard EPI sequence): alt+z when you have an odd number of slices, alt+z2 when you have an even number of slices.  'None' for multiband data.
 tpattern : 'alt+z'
-# Indicate the number of TRs you would like to skip for each functional run. Leave at 0 if you don't want to exclude any TRs.
+# Indicate the number of TRs you would like to skip at the beginning of each functional run. Leave at 0 if you don't want to exclude any TRs.
 numTRsToSkip : 0
 
 
-################ Section 3 ###################
-############################ #Edit for future. Need to be able to automatically compute/evaluate subjfMRIDirs, etc.
-# Subject raw data directory to all SCAN files containing DICOMs.  Subject IDs are indicated by the delimiter '%s'
+################ Section 3 ###################      # Note to Taku: Edit for future. Should be able to automatically compute/evaluate subjfMRIDirs, etc.
+# Directory Set Up
+
+# N.B.: Subject raw data directory to all SCAN files containing DICOMs.  Subject IDs are indicated by the delimiter '%s' 
+
+# Step 1: Establish output directories
 subjRawDataDir : '/Volumes/Drobot/docshare/colelabpreproctutorial/assignment1/rawdata/%s/'
 # Indicate the full path to the DICOMs (is a sub directory of subjRawDataDir)
 subjDicomDir : '/Volumes/Drobot/docshare/colelabpreproctutorial/assignment1/rawdata/%s/*.dcm'
 # Indicate where the freesurfer output should be, ideally in subjDir + 'freesurfer/'
 freesurferDir : '/Volumes/Drobot/docshare/colelabpreproctutorial/freesurfer/%s/'
 # Subject output directory
-subjDir : '/Volumes/Drobot/scratchdisk/taku_pypreproc2/%s/'
-# stimulus file directory (behavioral encodings)
+subjDir : '/Volumes/Drobot/scratchdisk/preproctutorial_<your_username>/%s/'
+# Stimulus file directory (behavioral encodings).  All encodings for all subjects should be in the same directory
 stimFileDir : '/Volumes/Drobot/docshare/colelabpreproctutorial/assignment2/timingfiles/'
 # Indicate the subject fMRI directory
-subjfMRIDir : '/Volumes/Drobot/scratchdisk/taku_pypreproc2/%s/fMRI/'
+subjfMRIDir : '/Volumes/Drobot/scratchdisk/preproctutorial_<your_username>/%s/fMRI/'
 # Indicate the subject Mask directory
-subjMaskDir : '/Volumes/Drobot/scratchdisk/taku_pypreproc2/%s/masks/'
+subjMaskDir : '/Volumes/Drobot/scratchdisk/preproctutorial_<your_username>/%s/masks/'
 # Indicate the subject analysis directory (typically should be a subdir of subjfMRIDir)
-subjAnalysisDir : '/Volumes/Drobot/scratchdisk/taku_pypreproc2/%s/fMRI/subjAnalysis/'
+subjAnalysisDir : '/Volumes/Drobot/scratchdisk/preproctutorial_<your_username>/%s/fMRI/subjAnalysis/'
 
-
-# Look in the raw data directory and observe all the various directories (should be numbered 1 through how ever many scans there were).  Find the directory containing the T1/anatomical scan.  If you're unsure, look inside 'subjRawDataDir'
+# Step 2: Indicate the directory names were the data actually are
+# Indicate the name of the directory of the T1/anatomical scan.  It must and should be a subdirectory of 'subjRawDataDir'.  Give the full directory name.
 T1_image : 'sagittal_mprage_256x256.5'
-# exclude slice time correction for now.
-epi_series : ['AssocMemRunX10_320x320.7', 'AssocMemRunX10_320x320.8', 'AssocMemRunX10_320x320.9', 'AssocMemRunX10_320x320.10', 'AssocMemRunX10_320x320.11', 'AssocMemRunX10_320x320.12','AssocMemRunX10_320x320.13', 'AssocMemRunX10_320x320.14', 'AssocMemRunX10_320x320.15', 'AssocMemRunX10_320x320.16']#, 'cmrr_mbep2d_bold_2mm_MB12_TR529msec_9', 'cmrr_mbep2d_bold_2mm_MB6_TR1sec_11']
-# Process the EPI runs separately?  You cannot use concatenate runs block if you do this. Default should be False.  If you set this option to False, the pipeline can't handle running more than 10 EPI scans separately at once, so please break them up into parts.
-runEPIsSeparate : False 
-# Default FS output name for segmentation
+# Indicate the directory name(s) of all EPI/functional scans you want to include.  Each scan should be its own directory, and should be in the same directory as the T1/anatomical scan. The directory name(s) should be in square brackets.
+epi_series : ['AssocMemRunX10_320x320.7', 'AssocMemRunX10_320x320.8', 'AssocMemRunX10_320x320.9', 'AssocMemRunX10_320x320.10', 'AssocMemRunX10_320x320.11', 'AssocMemRunX10_320x320.12','AssocMemRunX10_320x320.13', 'AssocMemRunX10_320x320.14', 'AssocMemRunX10_320x320.15', 'AssocMemRunX10_320x320.16']
+# Process the EPI runs separately?  You cannot use the concatenate runs block if you do this. Default should be False.  If you set this option to False, the pipeline can't handle running more than 10 EPI scans separately at once, so please break them up into parts.
+runEPIsSeparate : False # True or False
+# Default Freesurfer output name for segmentation. Only change this if you know what you're doing (or if you're using HCP data)
 fs_input : 'aseg.mgz'
-# Number of processes you want to use
+# Number of processes you want to use.
 nproc : 1
 
-# Ouput Log file:
-# Default get time and date
-logname : '/Volumes/Drobot/scratchdisk/taku_pypreproc2/%s/%s_taku.log'
+# Step 3: Give the name of the output log file for each subject. Each subject will produce its own, so ideally this log file should use '%s' to delimit differences in the log file names if the file is not indicated to be a subdirectory of a subject directory
+logname : '/Volumes/Drobot/scratchdisk/preproctutorial_<your_username>/%s/%s_pypreproc2.log'
 
-#############################################################################################################
-## GLM parameters ##
+
+###############################################################################################################
+# OPTIONAL PARAMETERS
+###############################################################################################################
+
+
+################ Section 3 ###################
+### GLM Parameters ###
+# If you are including the GLM node in your pipeline, you MUST provide the correct parameter details below.
+# This node implements AFNI's 3dDeconvolve function, so please refer to http://afni.nimh.nih.gov/pub/dist/doc/program_help/3dDeconvolve.html if you have any questions regarding parameter options.
 GLM :
     # Must indicate type. Either 'Activation' or 'rsfcMRI'
     type : 'Activation'
-    # Default is already set.  Don't change unless you know exactly what you're doing.
-    input : None 
-    # If you're running scans separately, leave this as None
+    # Default input name is automatically set by pipeline.  Leave blank, unless you know exactly what you're doing
+    input : 
+    # Indicate if you're running a GLM on EPI-concatenated data (i.e., if you ran the 'ConcatenateRuns' node, put True.  If not, put False)
     concat : True
-    # polort (A for activation, 1 for rsfcMRI)
+    # polort (A for activation GLM, 1 for rsfcMRI GLM)
     polort : A
     # Motion regressors are set by default below to the first 6 stim times, so do not change unless necessary:
+    # Only change if you're using HCP data (HCP data has more motion regressors built-in).
     motionregressors : 
         1 : "allruns_motion_params.1D'[0]'"
         2 : "allruns_motion_params.1D'[1]'"
@@ -142,9 +163,9 @@ GLM :
         4 : "allruns_motion_params.1D'[3]'"
         5 : "allruns_motion_params.1D'[4]'"
         6 : "allruns_motion_params.1D'[5]'"
-    # Indicate the stimulus timing files in AFNI format - only indicate the file name, since it will automatically search the task stimulus files in 'stimFileDir'.  
+    # Indicate the stimulus timing files in AFNI format - only indicate the file name, since it will automatically search the task stimulus files in 'stimFileDir'.  Make sure the stim files are in stimFileDir.
     stimtimes : 
-        # indicate the file, followed by the label you'd like to associate with this stimulus
+        # Enter an 2-element array. First, indicate the file name, followed by the label you'd like to associate with this stimulus
         1 : ["stime_%s_stimfile_AssocMemBlocks_CombStrength_EV1_Block_PairEnc.1D.01.1D 'BLOCK(54,1)'", 'PairEnc']
 
         2 : ["stime_%s_stimfile_AssocMemBlocks_CombStrength_EV2_Block_AudVisRet.1D.01.1D 'BLOCK(54,1)'",'AudVisRet']
@@ -156,15 +177,15 @@ GLM :
 
         5 : ["stime_%s_stimfile_AssocMemBlocks_CombStrength_EV5_Block_VisualCont.1D.01.1D 'BLOCK(54,1)'", 'VisualCont']
 
-    # enter the parameter for gltsym. Otherwise, leave it blank.
+    # Enter the parameter for gltsym. Otherwise, leave it blank. See AFNI documentation for this. Leave it blank for an rsfcMRI study.  The gltsym variable specifies a constrast, which statistically tests for differences between your regressors.
     gltsym : "-gltsym 'SYM: AuditoryCont -VisualCont' -glt_label 1 AudVsVisCont"
-    # Don't compute statistic v FDR (default: True for rsfcMRI, False for activation)
+    # Indicate whether or not you want to compute the FDR statistic (Default: True for rsfcMRI, False for activation)
     noFDR : True
     # Label True if you want each stimulus to have a F-statistic. Default is True
     fout : True
     # Label True if you want each stimulus to have a T-statistic. Default is True
     tout : True
     # Give the label of the residual error time series. Otherwise leave it blank
-    errts : #'NuissanceResid_Resids'
+    errts : # Enter name of residual error series or leave blank. (rsfcMRI:) 'NuissanceResid_Resids'
 
 
