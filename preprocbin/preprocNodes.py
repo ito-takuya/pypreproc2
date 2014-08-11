@@ -2,7 +2,7 @@
 # Specific execute blocks, e.g., prepareMPRAGE, epiAlignment, etc.
 
 import sys
-sys.path.append('preprocbin')
+sys.path.append('/projects/ColePreprocessingPipeline/docs/pypreproc2/preprocbin')
 from run_shell_cmd import run_shell_cmd
 import os
 import glob
@@ -66,6 +66,9 @@ class PrepareMPRAGE():
 
         # Compressing file
         run_shell_cmd('3dcopy mprage_skullstripped.nii.gz anat_mprage_skullstripped',logname)
+
+        run_shell_cmd('ln -s ' + conf.atlasAnat + ' .',logname)
+
 
 
 
@@ -243,7 +246,6 @@ class TalairachAlignment():
         #### Talairach transform anatomical image
         print '-Run @auto_tlrc to talairach transform anatomical T1 image-'
         run_shell_cmd('@auto_tlrc -base ' + conf.atlasAnat + ' -input anat_mprage_skullstripped+orig -no_ss',logname)
-        run_shell_cmd('ln -s ' + conf.atlasAnat + ' .',logname)
         run_shell_cmd('3dcopy anat_mprage_skullstripped+tlrc anat_mprage_skullstripped_tlrc.nii.gz', logname) #format into NIFTI format
 
         # Create Mask
@@ -562,13 +564,6 @@ class SpatialSmoothing():
         run_shell_cmd('3dBlurInMask -input ' + conf.nextInputFilename[-2] + '+tlrc -FWHM ' + str(conf.FWHMSmoothing) + ' -mask ' + conf.subjMaskDir + conf.subjID + '_gmMask_func_dil1vox.nii.gz -prefix ' + conf.nextInputFilename[-1] + '.nii.gz', logname)
 
 
-class GroupANOVA():
-    """
-    DESCRIPTION: This object deals with running group ANOVAs, in particular for activation studies.
-
-    """
-    def __init__(self, conf):
-        self.conf = conf
 
 
 class CustomCmd():

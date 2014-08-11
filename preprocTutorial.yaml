@@ -48,8 +48,7 @@ Nodes :
     10 : SpatialSmoothing
     # Runs a GLM analysis on final, spatially smoothed output (single subject). If 'True', will most likely need to edit certain parameters in AFNI's command.
     11 : RunGLM
-    # Run a group analysis running a two-factor ANOVA; if 'True', will need to edit certain parameters for this function
-    12 : GroupAnalysis
+
 
 # Step 2: Choose which nodes to run.
 # Indicate which nodes you want to actually run in the pipeline.  If you want to run all of them, make sure to include all numbers.  Note: The order is decided by the number of the node, not the order you list below.  It is suggested that when first testing out a pipeline, you run each node separately on a single subject to ensure the pipeline is working correctly.  If you just want to run a single node, just put a single number in square brackets (indicating the order in the above Nodes)
@@ -189,3 +188,21 @@ GLM :
     errts : # Enter name of residual error series or leave blank. (rsfcMRI:) 'NuissanceResid_Resids'
 
 
+
+################ Section 4 ###################
+# *** In development! *** #
+### Group ANOVA ###
+# If you are including the ANOVA node in your pipeline, you MUST provide the correct parameter details below.
+# This node implements AFNI's 3dANOVA2 function, so please refer to http://afni.nimh.nih.gov/pub/dist/doc/program_help/3dANOVA2.html if you have any questions regarding parameter options.
+
+ANOVA : 
+    addnode : True
+    input : # Default will be the output from the GLM analysis
+    type : 3 # This is the default for the tutorial data set.  For other options, please view the AFNI 3dANOVA2 documentation!
+    alevels : 2 # Number of conditions
+    blevels : # If left empty, will analyze number of subjects
+    conditions : # 10 and 13 for the ANOVA... 10 for auditory, 13 for visual
+        # format should be "<condition> : <sub-brick number>"
+        # Tutorial default:
+            AudCont : 10
+            VisCont : 13

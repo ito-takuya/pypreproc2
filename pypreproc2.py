@@ -16,6 +16,7 @@ import maskbin
 import config
 import utils
 import preprocNodes as ppnodes
+import analysisNodes as anodes
 from multiprocessing import Pool
 from tempfile import mkstemp
 from shutil import move
@@ -98,7 +99,7 @@ MAIN METHOD: method will the below commands as an executable
 """
 def main(): 
 
-	defaultConfig = '/projects/ColePreprocessingPipeline/docs/taku_dev/pypreproc2/preprocTutorial.yaml'
+	defaultConfig = '/Volumes/Drobot/scratchdisk/taku_pypreproc2/scripts/preprocTutorial.yaml'
 	# Ask for input path
 	configfile = raw_input('Give the full path of your configuration file (with a .yaml extension).  [Default: ' + defaultConfig + ']: ')
 	# Set default, if nothing is given
@@ -108,8 +109,13 @@ def main():
 	# Creates new config object
 
 	conf = config.Config(configfile)
-	runParallel(conf)
+	sconfs = runParallel(conf)
 
+	if sconfs[0].ANOVA['addNode'] == True:
+		anova = anodes.GroupANOVA2(sconfs)
+		anova.run()
+
+	return sconfs, anova
 
 	
 if __name__ == "__main__":
