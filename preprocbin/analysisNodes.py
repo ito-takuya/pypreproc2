@@ -56,27 +56,27 @@ class GroupANOVA2(Group):
     	conf = self.conf
     	logname = conf.logname
         ANOVA = conf.ANOVA
-        numSubjs = len(conf.listOfSubjects) if ANOVA['blevels'] == None else ANOVA['blevels']
+        numSubjs = len(sconfs) if ANOVA['blevels'] == None else ANOVA['blevels']
 
     	print '===Starting group analysis==='
 
     	# Link anatomical files to analysis directory for visualization
-    	run_shell_cmd('ln -s ' + conf.atlasAnat + ' ' + conf.groupAnalysisDir, logname) 
+    	run_shell_cmd('cp ' + conf.atlasAnat + ' ' + conf.groupAnalysisDir, logname) 
 
     	# Run ANOVA
     	print '--ANOVA: '
     	os.chdir(conf.groupAnalysisDir)
         
         # set parameters for 3dANOVA2 command
-        options = '-DAFNI_FLOATIZE=YES -type ' + str(ANOVA['type']) + ' -alevels ' + str(ANOVA['alevels']) + ' -blevels ' + numSubjs + ' '
+        options = '-DAFNI_FLOATIZE=YES -type ' + str(ANOVA['type']) + ' -alevels ' + str(ANOVA['alevels']) + ' -blevels ' + str(numSubjs) + ' '
         # instantiate number of dsets
         dsets = []
         subbricks = ANOVA['conditions'].values()
         condname = ANOVA['conditions'].keys()
         for condNum in range(1,ANOVA['alevels']+1):
             for subj in range(1,numSubjs+1): 
-                dsets.append('-dset ' + str(condNum) + ' ' + str(subj) + ' ' + sconfs[subj-1].subjfMRIDir + conf.nextInputFilename[-2] + "+tlrc'[" + subbricks[condNum-1] + "]' ")
-        fa = '-fa ALevel_MainEffect'
+                dsets.append('-dset ' + str(condNum) + ' ' + str(subj) + ' ' + sconfs[subj-1].subjfMRIDir + conf.nextInputFilename[-2] + "+tlrc'[" + str(subbricks[condNum-1]) + "]' ")
+        fa = '-fa ALevel_MainEffect '
         
         amean = ''
         for condNum in range(1,ANOVA['alevels']+1):

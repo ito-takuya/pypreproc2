@@ -4,6 +4,7 @@
 
 import os
 import yaml
+import copy
 
 class Config():
 	"""
@@ -195,11 +196,13 @@ class Config():
 
 class SubjConfig():
 	def __init__(self, conf, subj):
+		self.conf = copy.deepcopy(conf)
+
 		# Raise error if subjects is not in listOfSubjects
 		if not subj in conf.listOfSubjects:
 			raise('Internal Error, subj not defined in conf.listOfSubjects')
 
-		confdic = conf.__dict__
+		confdic = self.conf.__dict__
 		setattr(self, 'subjID', subj) # Set object attribute for subject ID
 		for key in confdic:
 			# Make sure parameter we're checking is a string

@@ -81,7 +81,8 @@ def runPipeline(sconf):
 	Helper method to run the pipeline, so can be funneled in to multiprocessing module
 	"""
 	pipe = Pipeline(sconf)
-	pipe.run()
+	sconf = pipe.run()
+	return sconf
 
 def runParallel(conf):
 	"""
@@ -114,8 +115,9 @@ def main():
 	if sconfs[0].ANOVA['addNode'] == True:
 		anova = anodes.GroupANOVA2(sconfs)
 		anova.run()
-
-	return sconfs, anova
+		return sconfs, anova
+	else:
+		return sconfs
 
 	
 if __name__ == "__main__":

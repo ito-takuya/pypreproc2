@@ -67,7 +67,7 @@ class PrepareMPRAGE():
         # Compressing file
         run_shell_cmd('3dcopy mprage_skullstripped.nii.gz anat_mprage_skullstripped',logname)
 
-        run_shell_cmd('ln -s ' + conf.atlasAnat + ' .',logname)
+        run_shell_cmd('cp ' + conf.atlasAnat + ' .',logname)
 
 
 

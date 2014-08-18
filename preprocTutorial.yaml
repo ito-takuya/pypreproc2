@@ -190,13 +190,12 @@ GLM :
 
 
 ################ Section 4 ###################
-# *** In development! *** #
 ### Group ANOVA ###
 # If you are including the ANOVA node in your pipeline, you MUST provide the correct parameter details below.
 # This node implements AFNI's 3dANOVA2 function, so please refer to http://afni.nimh.nih.gov/pub/dist/doc/program_help/3dANOVA2.html if you have any questions regarding parameter options.
 
 ANOVA : 
-    addnode : True
+    addnode : False # If running this analysis, set to True
     input : # Default will be the output from the GLM analysis
     type : 3 # This is the default for the tutorial data set.  For other options, please view the AFNI 3dANOVA2 documentation!
     alevels : 2 # Number of conditions
@@ -204,5 +203,5 @@ ANOVA :
     conditions : # 10 and 13 for the ANOVA... 10 for auditory, 13 for visual
         # format should be "<condition> : <sub-brick number>"
         # Tutorial default:
-            AudCont : 10
-            VisCont : 13
+            AudCont : # Add the appropriate sub brick for this condition
+            VisCont : # Add the appropriate sub brick for this condition
