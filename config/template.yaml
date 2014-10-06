@@ -188,7 +188,8 @@ GLM :
     tout : True
     # Give the label of the residual error time series. Otherwise leave it blank
     errts : # Enter name of residual error series or leave blank. (rsfcMRI:) 'NuissanceResid_Resids'
-
+    # Give the number of processors you'd like to use for the GLM.  CAUTION! If you're running more than one subject at a time (i.e., if you're running subjects in parallel given by the 'nproc' parameter above), note that the total number of cores/processes you will be using will be nproc*jobs.  However, increasing 'jobs' does not increase the amount of memory used, while increasing 'nproc' does.  In other words, if you increase 'jobs', the amount of memory will always remain the same. 
+    jobs : 1
 
 
 ################ Section 4 ###################
