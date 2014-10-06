@@ -249,7 +249,7 @@ class TalairachAlignment():
         run_shell_cmd('3dcopy anat_mprage_skullstripped+tlrc anat_mprage_skullstripped_tlrc.nii.gz', logname) #format into NIFTI format
 
         # Create Mask
-        run_shell_cmd("3dcalc -overwrite -a anat_mprage_skullstripped+tlrc -expr 'is positive(a)' -prefix " + conf.subjMaskDir + "/wholebrain_mask.nii.gz" ,logname)
+        run_shell_cmd("3dcalc -overwrite -a anat_mprage_skullstripped+tlrc -expr 'ispositive(a)' -prefix " + conf.subjMaskDir + "/wholebrain_mask.nii.gz" ,logname)
         # Link anatomical image to mask directory for checking alignment
         run_shell_cmd('ln -s anat_mprage_skullstripped_tlrc.nii.gz ' + conf.subjMaskDir,logname)
 
@@ -511,7 +511,10 @@ class RunGLM():
         fdr = '' if  GLM['noFDR'] == False else '-noFDR '
         fout = '-fout ' if GLM['fout'] == True else ''
         tout = '-tout ' if GLM['tout'] == True else ''
-        jobs = '-jobs 1 -float '
+        if 'jobs' in GLM.keys():
+            jobs = '-jobs ' + str(GLM['jobs']) + ' -float '
+        else:
+            jobs = '-jobs 1 -float '
 
         # change outbucket output name according to type of GLM run
         if GLM['type'] == 'Activation':

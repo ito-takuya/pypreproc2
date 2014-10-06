@@ -2,6 +2,8 @@
 # Taku Ito
 # 07/23/2014
 
+# 09/24/14 - EDIT - Added SensiYamlGUIBundle to enable webform edits
+
 # N.B.: DO NOT CHANGE THE INDENTATION OF THIS FILE! It will mess up the pipeline and how the parameters are parsed. I will come up with a better solution later.
 
 # Parameters for Preprocessing and Preliminary Analysis

@@ -110,6 +110,8 @@ def main():
 	# Creates new config object
 
 	conf = config.Config(configfile)
+
+	# This command runs all single-subject processing
 	sconfs = runParallel(conf)
 
 	if sconfs[0].ANOVA['addNode'] == True:
