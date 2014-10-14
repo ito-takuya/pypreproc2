@@ -67,7 +67,7 @@ class PrepareMPRAGE():
         # Compressing file
         run_shell_cmd('3dcopy mprage_skullstripped.nii.gz anat_mprage_skullstripped',logname)
 
-        run_shell_cmd('cp ' + conf.atlasAnat + ' .',logname)
+        run_shell_cmd('cp ' + conf.atlasAnat + '* .',logname)
 
 
 
@@ -447,9 +447,17 @@ class RunGLM():
             stimtimes.append('-stim_file 2 ' + conf.ventricles_timeseries + '.1D -stim_label 2 Vent ')
             stimtimes.append('-stim_file 3 ' + conf.wm_timeseries + '_deriv.1D -stim_label 3 WMDeriv ')
             stimtimes.append('-stim_file 4 ' + conf.ventricles_timeseries + '_deriv.1D -stim_label 4 VentDeriv ')
-            stimtimes.append("-stim_file 5 " + conf.wholebrain_timeseries + '.1D -stim_label 5 WholeBrain ')
-            stimtimes.append("-stim_file 6 " + conf.wholebrain_timeseries + '_deriv.1D -stim_label 6 WholeBrainDeriv ')
-            stimcount = 7 # need to start at 7 since we already included the first 6 stimtimes
+            if 'GSR' in GLM.keys():
+                if GLM['GSR'] == True:
+                    print '***Including GSR in GLM***'
+                    stimtimes.append("-stim_file 5 " + conf.wholebrain_timeseries + '.1D -stim_label 5 WholeBrain ')
+                    stimtimes.append("-stim_file 6 " + conf.wholebrain_timeseries + '_deriv.1D -stim_label 6 WholeBrainDeriv ')
+                    stimcount = 7 # need to start at 7 since we already included the first 6 stimtimes
+
+                else:
+                    print '***Not including GSR in GLM***'
+                    stimcount = 5 # need to start at 5 since we already included the first 4 stimtimes
+
             for key in motionregs:
                 stimtimes.append("-stim_file " + str(stimcount) + ' ' + conf.subjfMRIDir + motionregs[key] + " -stim_base " + str(stimcount) + ' ')
                 stimcount += 1
@@ -566,6 +574,50 @@ class SpatialSmoothing():
 
         run_shell_cmd('3dBlurInMask -input ' + conf.nextInputFilename[-2] + '+tlrc -FWHM ' + str(conf.FWHMSmoothing) + ' -mask ' + conf.subjMaskDir + conf.subjID + '_gmMask_func_dil1vox.nii.gz -prefix ' + conf.nextInputFilename[-1] + '.nii.gz', logname)
 
+
+
+class PercentSignalNormalization():
+    """
+    Updated: 10/14/14
+    Reason: To deal with inhomogeneities in RUBIC's multiband EPI data
+    """
+
+    def __init__(self, conf):
+        self.conf = conf
+        self.conf.nextInputFilename.append(conf.nextInputFilename[-1] + '_pscNorm')
+
+    def run(self):
+        if self.conf.runEPIsSeparate == True:
+            print 'Running separately for each EPI scan...'
+            for runNum in range(1,len(self.conf.epi_series)+1):
+                self.conf.nextInputFilename[-1] = re.sub('epi_r[0-9]', 'epi_r' + str(runNum),self.conf.nextInputFilename[-1])
+                self.conf.nextInputFilename[-2] = re.sub('epi_r[0-9]', 'epi_r' + str(runNum),self.conf.nextInputFilename[-2])
+                self.runHelp()
+        else:
+            print 'Running on concatenated EPIs...'
+            self.runHelp()
+
+
+    def runHelp(self):
+        # make local variable
+        conf = self.conf
+        logname = conf.logname
+
+        print '-Percent Signal Change Normalization-'
+
+        print '-Create whole brain mask in functional space-'
+        os.chdir(conf.subjMaskDir)
+        run_shell_cmd('3dresample -overwrite -master ' + conf.subjfMRIDir + conf.nextInputFilename[-2] + '.nii.gz -inset ' + conf.subjID + '_wholebrainmask.nii.gz -prefix ' + conf.subjID + '_wholebrainmask_func.nii.gz',logname)
+
+        os.chdir(conf.subjfMRIDir)
+        print '-Deoblique whole brain mask to align with original EPI image-'
+        run_shell_cmd('3dWarp -card2oblique ' + conf.nextInputFilename[-2] + ' -prefix tmp_deoblique_wbm.nii.gz ../masks/' + conf.subjID + '_wholebrainmask_func.nii.gz', logname)
+        print '-Run 3dTstat to get the mean activation for each voxel across time-'
+        run_shell_cmd('3dTstat -mean -prefix tmp_tmean.nii.gz ' + conf.nextInputFilename[-2], logname)
+        print '-Now run percent signal change, masking to deobliqued, whole brain mask-'
+        run_shell_cmd('3dcalc -a ' + conf.nextInputFilename[-2] + " -b tmp_tmean.nii.gz -c tmp_deoblique_wbm.nii.gz -expr '100 * a/b * ispositive(c)' -prefix " + conf.nextInputFilename[-1], logname)
+        print '-Deleting intermediate files...-'
+        run_shell_cmd('rm -v tmp_deoblique_wbm.nii.gz tmp_tmean.nii.gz',logname)
 
 
 

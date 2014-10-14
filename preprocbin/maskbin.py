@@ -185,7 +185,7 @@ class CreateVentricleMask():
 		os.chdir(subjMaskDir)
 	        
 		print '---------------------'
-		print 'Create ventricle mask, and erode it for subject $subjNum (MAKE SURE EROSION DOESN\'T REMOVE ALL VENTRICLE VOXELS)'
+		print 'Create ventricle mask, and erode it for subject ' + str(subj) + ' (MAKE SURE EROSION DOESN\'T REMOVE ALL VENTRICLE VOXELS)'
 
 		run_shell_cmd('cp ' + freesurferDir + '/mri/' + input + ' ./' + str(subj) + '_' + input,logname)
 		run_shell_cmd('mri_convert -i ' + str(subj) + '_' + input + ' -ot nii ' + str(subj) + '_fs_seg.nii',logname)
