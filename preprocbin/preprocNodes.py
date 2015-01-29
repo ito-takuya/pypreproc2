@@ -605,19 +605,16 @@ class PercentSignalNormalization():
 
         print '-Percent Signal Change Normalization-'
 
-        print '-Create whole brain mask in functional space-'
-        os.chdir(conf.subjMaskDir)
-        run_shell_cmd('3dresample -overwrite -master ' + conf.subjfMRIDir + conf.nextInputFilename[-2] + '.nii.gz -inset ' + conf.subjID + '_wholebrainmask.nii.gz -prefix ' + conf.subjID + '_wholebrainmask_func.nii.gz',logname)
-
         os.chdir(conf.subjfMRIDir)
         print '-Deoblique whole brain mask to align with original EPI image-'
-        run_shell_cmd('3dWarp -card2oblique ' + conf.nextInputFilename[-2] + ' -prefix tmp_deoblique_wbm.nii.gz ../masks/' + conf.subjID + '_wholebrainmask_func.nii.gz', logname)
+        run_shell_cmd('3dWarp -card2oblique ' + conf.nextInputFilename[-2] + '+orig -prefix tmp_deoblique_wbm.nii.gz ' + conf.subjMaskDir + conf.subjID + '_wholebrainmask.nii.gz', logname)
+        run_shell_cmd('3dresample -overwrite -master ' + conf.subjfMRIDir + conf.nextInputFilename[-2] + '+orig -inset tmp_deoblique_wbm.nii.gz -prefix tmp_deoblique_wbm_func.nii.gz',logname)
         print '-Run 3dTstat to get the mean activation for each voxel across time-'
-        run_shell_cmd('3dTstat -mean -prefix tmp_tmean.nii.gz ' + conf.nextInputFilename[-2], logname)
+        run_shell_cmd('3dTstat -mean -prefix tmp_tmean.nii.gz ' + conf.nextInputFilename[-2] + '+orig', logname)
         print '-Now run percent signal change, masking to deobliqued, whole brain mask-'
-        run_shell_cmd('3dcalc -a ' + conf.nextInputFilename[-2] + " -b tmp_tmean.nii.gz -c tmp_deoblique_wbm.nii.gz -expr '100 * a/b * ispositive(c)' -prefix " + conf.nextInputFilename[-1], logname)
+        run_shell_cmd('3dcalc -a ' + conf.nextInputFilename[-2] + "+orig -b tmp_tmean.nii.gz -c tmp_deoblique_wbm_func.nii.gz -expr '100 * a/b * ispositive(c)' -prefix " + conf.nextInputFilename[-1], logname)
         print '-Deleting intermediate files...-'
-        run_shell_cmd('rm -v tmp_deoblique_wbm.nii.gz tmp_tmean.nii.gz',logname)
+#        run_shell_cmd('rm -v tmp_deoblique_wbm.nii.gz tmp_tmean.nii.gz tmp_deoblique_wbm_func.nii.gz',logname)
 
 
 

@@ -24,6 +24,7 @@ class CreateGMMask():
 		freesurferDir = conf.freesurferDir
 		hcpdata = conf.hcpData
 		input = conf.fs_input
+                subjDir = conf.subjDir
 		logname = conf.logname
 
 		os.chdir(subjMaskDir)
@@ -31,12 +32,24 @@ class CreateGMMask():
 		print '---------------------'
 		print 'Creating gray matter mask based on Freesurfer autosegmentation for subject ', subj
 
-		print "Don't worry if the next three commands print out errors... if you are working with HCP-type data, they probably will result in errors"
-		run_shell_cmd('cp ' + freesurferDir + '/mri/' + input + ' ./' + str(subj) + '_' + input,logname)
-		run_shell_cmd('mri_convert -i ' + str(subj) + '_' + input + ' -ot nii ' + str(subj) + '_fs_seg.nii',logname)
-		run_shell_cmd("3dcalc -overwrite -a " + str(subj) + "_fs_seg.nii -expr 'a' -prefix " + str(subj) + '_fs_seg.nii.gz',logname)
+                
+                # adjusting for use if HCP pipeline was used
+                if input== 'wmparc.nii.gz':
+                    input = 'wmparc.nii.gz'
+                    analysisDir = subjDir + '/MNINonLinear/'
+                else:
+                    input = str(subj) + '_' + input
+                    analysisDir = freesurferDir + '/mri/'
 
-		run_shell_cmd('rm ' + str(subj) + '_fs_seg.nii ' + str(subj) + '_' + input,logname) #Delete both mgz and nii 
+                print 'saving from', analysisDir, 'to', os.getcwd()
+                if input == 'wmparc.nii.gz':
+                    run_shell_cmd('cp -v ' + analysisDir + input + ' ' + str(subj) + '_fs_seg.nii.gz',logname)
+                else: 
+                    run_shell_cmd('cp -v ' + analysisDir + input + ' ' + str(subj) + '_fs_seg.nii',logname)
+                if input != 'wmparc.nii.gz': run_shell_cmd('mri_convert -i ' + input + ' -ot nii ' + str(subj) + '_fs_seg.nii',logname)
+                if input != 'wmparc.nii.gz': run_shell_cmd("3dcalc -overwrite -a " + str(subj) + "_fs_seg.nii -expr 'a' -prefix " + str(subj) + "_fs_seg.nii.gz",logname)
+		# Delete intermediary files
+		run_shell_cmd('rm ' + str(subj) + '_fs_seg.nii ' + str(subj) + '_' + input + ' ' + str(subj) + 'mask_temp.nii.gz',logname)
 		print "Any error after this output should be noted and checked... there shouldn't be errors after this flag"
 
 
@@ -103,15 +116,27 @@ class CreateWMMask():
 		hcpdata = conf.hcpData 
 		input = conf.fs_input
 		logname = conf.logname
-
+                subjDir = conf.subjDir
 		os.chdir(subjMaskDir)
 
 		print '---------------------'
 		print 'Create white matter mask, and erode it for subject', subj, '(MAKE SURE EROSIAN DOESN\'T REMOVE ALL VENTRICLE VOXELS)'
+                
+                # adjusting for use if HCP pipeline was used
+                if input== 'wmparc.nii.gz':
+                    input = 'wmparc.nii.gz'
+                    analysisDir = subjDir + '/MNINonLinear/'
+                else:
+                    input = str(subj) + '_' + input
+                    analysisDir = freesurferDir + '/mri/'
 
-		run_shell_cmd('cp ' + freesurferDir + '/mri/' + input + ' ./' + str(subj) + '_' + input,logname)
-		run_shell_cmd('mri_convert -i ' + str(subj) + '_' + input + ' -ot nii ' + str(subj) + '_fs_seg.nii',logname)
-		run_shell_cmd("3dcalc -overwrite -a " + str(subj) + "_fs_seg.nii -expr 'a' -prefix " + str(subj) + "_fs_seg.nii.gz",logname)
+                print 'saving from', analysisDir, 'to', os.getcwd()
+                if input == 'wmparc.nii.gz':
+                    run_shell_cmd('cp -v ' + analysisDir + input + ' ' + str(subj) + '_fs_seg.nii.gz',logname)
+                else: 
+                    run_shell_cmd('cp -v ' + analysisDir + input + ' ' + str(subj) + '_fs_seg.nii',logname)
+                if input != 'wmparc.nii.gz': run_shell_cmd('mri_convert -i ' + input + ' -ot nii ' + str(subj) + '_fs_seg.nii',logname)
+                if input != 'wmparc.nii.gz': run_shell_cmd("3dcalc -overwrite -a " + str(subj) + "_fs_seg.nii -expr 'a' -prefix " + str(subj) + "_fs_seg.nii.gz",logname)
 		# Delete intermediary files
 		run_shell_cmd('rm ' + str(subj) + '_fs_seg.nii ' + str(subj) + '_' + input + ' ' + str(subj) + 'mask_temp.nii.gz',logname)
 
@@ -179,6 +204,7 @@ class CreateVentricleMask():
 		subjMaskDir = conf.subjMaskDir
 		subjfMRIDir = conf.subjfMRIDir
 		freesurferDir = conf.freesurferDir
+                subjDir = conf.subjDir
 		hcpdata = conf.hcpData
 		input = conf.fs_input
 
@@ -187,9 +213,21 @@ class CreateVentricleMask():
 		print '---------------------'
 		print 'Create ventricle mask, and erode it for subject ' + str(subj) + ' (MAKE SURE EROSION DOESN\'T REMOVE ALL VENTRICLE VOXELS)'
 
-		run_shell_cmd('cp ' + freesurferDir + '/mri/' + input + ' ./' + str(subj) + '_' + input,logname)
-		run_shell_cmd('mri_convert -i ' + str(subj) + '_' + input + ' -ot nii ' + str(subj) + '_fs_seg.nii',logname)
-		run_shell_cmd("3dcalc -overwrite -a " + str(subj) + "_fs_seg.nii -expr 'a' -prefix " + str(subj) + "_fs_seg.nii.gz",logname)
+                # adjusting for use if HCP pipeline was used
+                if input== 'wmparc.nii.gz':
+                    input = 'wmparc.nii.gz'
+                    analysisDir = subjDir + '/MNINonLinear/'
+                else:
+                    input = str(subj) + '_' + input
+                    analysisDir = freesurferDir + '/mri/'
+
+                print 'saving from', analysisDir, 'to', os.getcwd()
+                if input == 'wmparc.nii.gz':
+                    run_shell_cmd('cp -v ' + analysisDir + input + ' ' + str(subj) + '_fs_seg.nii.gz',logname)
+                else: 
+                    run_shell_cmd('cp -v ' + analysisDir + input + ' ' + str(subj) + '_fs_seg.nii',logname)
+                if input != 'wmparc.nii.gz': run_shell_cmd('mri_convert -i ' + input + ' -ot nii ' + str(subj) + '_fs_seg.nii',logname)
+                if input != 'wmparc.nii.gz': run_shell_cmd("3dcalc -overwrite -a " + str(subj) + "_fs_seg.nii -expr 'a' -prefix " + str(subj) + "_fs_seg.nii.gz",logname)
 		# Delete intermediary files
 		run_shell_cmd('rm ' + str(subj) + '_fs_seg.nii ' + str(subj) + '_' + input + ' ' + str(subj) + 'mask_temp.nii.gz',logname)
 

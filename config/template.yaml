@@ -46,10 +46,10 @@ Nodes :
     8 : CreateVentricleMask
     # Extracts the time series using the gray, white, and ventricle masks
     9 : TimeSeriesExtraction
-    # Smooths the epi/functional images according to the FWHMSmoothing parameter (see below, @ Data Parameters Section)
-    10 : SpatialSmoothing
     # Runs a GLM analysis on final, spatially smoothed output (single subject). If 'True', will most likely need to edit certain parameters in AFNI's command.
-    11 : RunGLM
+    10 : RunGLM
+    # Smooths the epi/functional images according to the FWHMSmoothing parameter (see below, @ Data Parameters Section)
+    11 : SpatialSmoothing
 
 
 # Step 2: Choose which nodes to run.
@@ -186,6 +186,8 @@ GLM :
     fout : True
     # Label True if you want each stimulus to have a T-statistic. Default is True
     tout : True
+    # # Indicate whether or not to run GSR
+    GSR : False
     # Give the label of the residual error time series. Otherwise leave it blank
     errts : # Enter name of residual error series or leave blank. (rsfcMRI:) 'NuissanceResid_Resids'
     # Give the number of processors you'd like to use for the GLM.  CAUTION! If you're running more than one subject at a time (i.e., if you're running subjects in parallel given by the 'nproc' parameter above), note that the total number of cores/processes you will be using will be nproc*jobs.  However, increasing 'jobs' does not increase the amount of memory used, while increasing 'nproc' does.  In other words, if you increase 'jobs', the amount of memory will always remain the same. 
@@ -198,7 +200,7 @@ GLM :
 # This node implements AFNI's 3dANOVA2 function, so please refer to http://afni.nimh.nih.gov/pub/dist/doc/program_help/3dANOVA2.html if you have any questions regarding parameter options.
 
 ANOVA : 
-    addnode : False # If running this analysis, set to True
+    addNode : False # If running this analysis, set to True
     input : # Default will be the output from the GLM analysis
     type : 3 # This is the default for the tutorial data set.  For other options, please view the AFNI 3dANOVA2 documentation!
     alevels : 2 # Number of conditions
