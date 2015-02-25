@@ -38,7 +38,7 @@ class CreateGMMask():
                     input = 'wmparc.nii.gz'
                     analysisDir = subjDir + '/MNINonLinear/'
                 else:
-                    input = str(subj) + '_' + input
+                    input = input
                     analysisDir = freesurferDir + '/mri/'
 
                 print 'saving from', analysisDir, 'to', os.getcwd()
@@ -128,7 +128,7 @@ class CreateWMMask():
                     input = 'wmparc.nii.gz'
                     analysisDir = subjDir + '/MNINonLinear/'
                 else:
-                    input = str(subj) + '_' + input
+                    input = input
                     analysisDir = freesurferDir + '/mri/'
 
                 print 'saving from', analysisDir, 'to', os.getcwd()
@@ -221,7 +221,7 @@ class CreateVentricleMask():
                     input = 'wmparc.nii.gz'
                     analysisDir = subjDir + '/MNINonLinear/'
                 else:
-                    input = str(subj) + '_' + input
+                    input = input
                     analysisDir = freesurferDir + '/mri/'
 
                 print 'saving from', analysisDir, 'to', os.getcwd()
