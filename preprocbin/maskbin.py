@@ -45,7 +45,8 @@ class CreateGMMask():
                 if input == 'wmparc.nii.gz':
                     run_shell_cmd('cp -v ' + analysisDir + input + ' ' + str(subj) + '_fs_seg.nii.gz',logname)
                 else: 
-                    run_shell_cmd('cp -v ' + analysisDir + input + ' ' + str(subj) + '_fs_seg.nii',logname)
+                    run_shell_cmd('cp -v ' + analysisDir + input + ' .',logname)
+
                 if input != 'wmparc.nii.gz': run_shell_cmd('mri_convert -i ' + input + ' -ot nii ' + str(subj) + '_fs_seg.nii',logname)
                 if input != 'wmparc.nii.gz': run_shell_cmd("3dcalc -overwrite -a " + str(subj) + "_fs_seg.nii -expr 'a' -prefix " + str(subj) + "_fs_seg.nii.gz",logname)
 		# Delete intermediary files
@@ -134,7 +135,9 @@ class CreateWMMask():
                 if input == 'wmparc.nii.gz':
                     run_shell_cmd('cp -v ' + analysisDir + input + ' ' + str(subj) + '_fs_seg.nii.gz',logname)
                 else: 
-                    run_shell_cmd('cp -v ' + analysisDir + input + ' ' + str(subj) + '_fs_seg.nii',logname)
+                    #run_shell_cmd('cp -v ' + analysisDir + input + ' ' + str(subj) + '_fs_seg.nii',logname)
+                    run_shell_cmd('cp -v ' + analysisDir + input + ' .',logname)
+
                 if input != 'wmparc.nii.gz': run_shell_cmd('mri_convert -i ' + input + ' -ot nii ' + str(subj) + '_fs_seg.nii',logname)
                 if input != 'wmparc.nii.gz': run_shell_cmd("3dcalc -overwrite -a " + str(subj) + "_fs_seg.nii -expr 'a' -prefix " + str(subj) + "_fs_seg.nii.gz",logname)
 		# Delete intermediary files
@@ -225,7 +228,8 @@ class CreateVentricleMask():
                 if input == 'wmparc.nii.gz':
                     run_shell_cmd('cp -v ' + analysisDir + input + ' ' + str(subj) + '_fs_seg.nii.gz',logname)
                 else: 
-                    run_shell_cmd('cp -v ' + analysisDir + input + ' ' + str(subj) + '_fs_seg.nii',logname)
+                    run_shell_cmd('cp -v ' + analysisDir + input + ' .',logname)
+                    #run_shell_cmd('cp -v ' + analysisDir + input + ' ' + str(subj) + '_fs_seg.nii',logname)
                 if input != 'wmparc.nii.gz': run_shell_cmd('mri_convert -i ' + input + ' -ot nii ' + str(subj) + '_fs_seg.nii',logname)
                 if input != 'wmparc.nii.gz': run_shell_cmd("3dcalc -overwrite -a " + str(subj) + "_fs_seg.nii -expr 'a' -prefix " + str(subj) + "_fs_seg.nii.gz",logname)
 		# Delete intermediary files

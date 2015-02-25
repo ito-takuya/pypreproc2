@@ -80,9 +80,9 @@ basedir : '/Volumes/Drobot/scratchdisk/preproctutorial_<your_username>/'
 # Indicate the scripts directory.  Should be a subdirectory of the base directory
 scriptsDir : '/Volumes/Drobot/scratchdisk/preproctutorial_<your_username>/scripts/'
 # Indicate the brain atlas to be used for the anatomical (T1) image - should not need to change this
-atlasAnat : '/Applications/afni/MNI152_1mm_uni+tlrc' # 1mm template for multiband (2mm for regular)
+atlasAnat : '/Applications/afni/MNI_avg152T1+tlrc' # 1mm template for multiband (2mm for regular)
 # Indicate the brain atlas to be used for the functional (EPI) image - should not need to change htis
-atlasEPI : '/Applications/afni/MNI_EPI+tlrc' # 2mm template for multiband, 3mm for regular
+atlasEPI : '/Applications/afni/MNI_EPI_333+tlrc' # 2mm template for multiband, 3mm for regular
 # Location to AFNI's binary files - should not need to change this on ColeLabMac
 AFNI_loc : '/Applications/afni/afni'
 # Location to Freesurfer's binary files - should not need to change this on ColeLabMac
