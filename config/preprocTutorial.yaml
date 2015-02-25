@@ -199,7 +199,7 @@ GLM :
 # This node implements AFNI's 3dANOVA2 function, so please refer to http://afni.nimh.nih.gov/pub/dist/doc/program_help/3dANOVA2.html if you have any questions regarding parameter options.
 
 ANOVA : 
-    addnode : False # If running this analysis, set to True
+    addNode : False # If running this analysis, set to True
     input : # Default will be the output from the GLM analysis
     type : 3 # This is the default for the tutorial data set.  For other options, please view the AFNI 3dANOVA2 documentation!
     alevels : 2 # Number of conditions
